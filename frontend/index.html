@@ -85,18 +85,18 @@
           "margin": "1rem"
         },
         "fontFamily": {
-          "headline-xl": ["Geist"],
-          "currency-display": ["Geist"],
-          "body-md": ["Inter"],
-          "body-sm": ["Inter"],
-          "label-md": ["Geist"],
-          "headline-lg": ["Geist"],
-          "headline-sm": ["Geist"],
-          "table-data": ["Inter"],
-          "label-sm": ["Geist"],
-          "headline-xl-mobile": ["Geist"],
-          "body-lg": ["Inter"],
-          "headline-lg-mobile": ["Geist"]
+          "headline-xl": ["Inter", "sans-serif"],
+          "currency-display": ["Inter", "sans-serif"],
+          "body-md": ["Inter", "sans-serif"],
+          "body-sm": ["Inter", "sans-serif"],
+          "label-md": ["Inter", "sans-serif"],
+          "headline-lg": ["Inter", "sans-serif"],
+          "headline-sm": ["Inter", "sans-serif"],
+          "table-data": ["Inter", "sans-serif"],
+          "label-sm": ["Inter", "sans-serif"],
+          "headline-xl-mobile": ["Inter", "sans-serif"],
+          "body-lg": ["Inter", "sans-serif"],
+          "headline-lg-mobile": ["Inter", "sans-serif"]
         },
         "fontSize": {
           "headline-xl": ["2.25rem", { lineHeight: "2.75rem", letterSpacing: "-0.025em", fontWeight: "600" }],
@@ -156,7 +156,7 @@
 <body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col font-body-md overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
 <!-- ==================== TOP NAVIGATION BAR ==================== -->
 <!-- Executing TopNavBar specification from JSON schema -->
-<header class="flex justify-between items-center w-full px-6 h-14 bg-surface fixed top-0 z-40 border-b border-outline-variant">
+<header class="flex justify-between items-center w-full px-6 h-20 pt-4 pb-1 bg-surface fixed top-0 z-40 border-b border-outline-variant">
 <!-- Brand / Product Identity & Ontario Tax Jurisdiction -->
 <div class="flex items-center gap-5">
 <div class="flex items-center gap-3">
@@ -164,7 +164,7 @@
           P
         </div>
 <div class="flex flex-col">
-<span class="font-headline-sm text-headline-sm font-semibold text-on-surface tracking-tight leading-none">Payless Motors Group</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface tracking-tight leading-tight">Payless Motors Group</span>
 <span class="text-[10px] text-on-surface-variant font-label-sm uppercase tracking-wider mt-0.5">Multi-Entity Financial Ledger</span>
 </div>
 </div>
@@ -260,10 +260,10 @@
 </div>
 </header>
 <!-- ==================== MAIN WORKSPACE LAYOUT ==================== -->
-<div class="flex flex-1 pt-14">
+<div class="flex flex-1 pt-20">
 <!-- ==================== SIDEBAR RAIL ==================== -->
 <!-- Executing SideNavBar JSON specification -->
-<aside class="fixed left-0 top-14 bottom-0 w-60 z-30 flex flex-col justify-between p-4 bg-surface-container-lowest border-r border-outline-variant">
+<aside class="fixed left-0 top-20 bottom-0 w-60 z-30 flex flex-col justify-between p-4 bg-surface-container-lowest border-r border-outline-variant">
 <!-- Rail Upper Section -->
 <div class="flex flex-col gap-5 overflow-y-auto">
 <!-- Dealership Monogram & Title -->

@@ -41,8 +41,10 @@ The content is organized as follows:
 
 <directory_structure>
 backend/
+  create_users.js
   extractHandler.js
   extractReceipt.js
+  ledgerHandler.js
   package.json
   qboAuth.js
   server.js
@@ -52,7 +54,9 @@ backend/
   testExtract.js
   testFullPipeline.js
 frontend/
+  auth.js
   index.html
+  technician.html
 .env.example
 .gitignore
 amplify.yml
@@ -63,411 +67,126 @@ template.yaml
 <files>
 This section contains the contents of the repository's files.
 
-<file path="backend/extractHandler.js">
-const AWS = require('aws-sdk');
-const { parseReceipt } = require('./extractReceipt');
-const { v4: uuidv4 } = require('uuid');
+<file path="backend/create_users.js">
+const { CognitoIdentityProviderClient, AdminCreateUserCommand, AdminAddUserToGroupCommand, SetUserPasswordCommand } = require('@aws-sdk/client-cognito-identity-provider');
 
-const docClient = new AWS.DynamoDB.DocumentClient();
-const s3 = new AWS.S3();
-const TABLE_NAME = 'PaylessJournalEntries';
+const client = new CognitoIdentityProviderClient({ region: 'ca-central-1' });
+
+const USER_POOL_ID = process.argv[2];
+
+const users = [
+  { email: 'owner@paylessmotors.com', group: 'Owner' },
+  { email: 'controller@paylessmotors.com', group: 'Controller' },
+  { email: 'technician@paylessmotors.com', group: 'Technician' }
+];
+
+async function createUsers() {
+  if (!USER_POOL_ID) {
+    console.error('Usage: node create_users.js <USER_POOL_ID>');
+    process.exit(1);
+  }
+
+  for (const u of users) {
+    try {
+      console.log(`Creating user: ${u.email}...`);
+      await client.send(new AdminCreateUserCommand({
+        UserPoolId: USER_POOL_ID,
+        Username: u.email,
+        UserAttributes: [
+          { Name: 'email', Value: u.email },
+          { Name: 'email_verified', Value: 'true' }
+        ],
+        MessageAction: 'SUPPRESS' // Don't send welcome email since this is a test
+      }));
+
+      console.log(`Setting permanent password for ${u.email}...`);
+      await client.send(new SetUserPasswordCommand({
+        UserPoolId: USER_POOL_ID,
+        Username: u.email,
+        Password: 'Password123!',
+        Permanent: true
+      }));
+
+      console.log(`Adding ${u.email} to group: ${u.group}...`);
+      await client.send(new AdminAddUserToGroupCommand({
+        UserPoolId: USER_POOL_ID,
+        Username: u.email,
+        GroupName: u.group
+      }));
+
+      console.log(`Successfully created ${u.email} in ${u.group} group with password: Password123!`);
+    } catch (err) {
+      if (err.name === 'UsernameExistsException') {
+        console.log(`User ${u.email} already exists.`);
+      } else {
+        console.error(`Failed to create ${u.email}:`, err.message);
+      }
+    }
+  }
+}
+
+createUsers();
+</file>
+
+<file path="backend/ledgerHandler.js">
+/**
+ * ledgerHandler.js
+ * Handles fetching and updating journal entries in the PaylessJournalEntriesTable.
+ */
+
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, ScanCommand } = require('@aws-sdk/lib-dynamodb');
+
+const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'ca-central-1' });
+const docClient = DynamoDBDocumentClient.from(client);
+
+const TABLE_NAME = process.env.RECEIPT_TABLE_NAME || 'PaylessJournalEntries';
 
 exports.handler = async (event) => {
   try {
-    let imageData;
-    let entityId = 'UNASSIGNED';
+    const httpMethod = event.httpMethod || event.requestContext?.http?.method;
 
-    // Handle S3 Upload Event
-    if (event.Records && event.Records[0].eventSource === 'aws:s3') {
-      const record = event.Records[0];
-      const bucket = record.s3.bucket.name;
-      const key = decodeURIComponent(record.s3.object.key.replace(/\+/g, ' '));
-
-      // Extract entityId from folder structure if present (e.g., ROYAL_MOTORS/invoice.jpg)
-      const parts = key.split('/');
-      if (parts.length > 1) {
-        entityId = parts[0];
-      }
-
-      // Download from S3
-      const s3Object = await s3.getObject({ Bucket: bucket, Key: key }).promise();
-      imageData = s3Object.Body.toString('base64');
-    } 
-    // Handle API Gateway POST
-    else if (event.body) {
-      const body = JSON.parse(event.body);
-      imageData = body.imageData;
-      entityId = body.entityId || 'PAYLESS_MOTORS';
-    }
-
-    if (!imageData) {
-      throw new Error('No image data found in event.');
-    }
-
-    // Invoke the parser
-    const result = parseReceipt(imageData);
-    
-    // Create the DB record
-    const entryId = uuidv4();
-    const Item = {
-      entityId,
-      entryId,
-      status: 'PENDING',
-      vin: result.aiResponsePayload.extractedData.vin || 'UNKNOWN',
-      vendorName: result.aiResponsePayload.extractedData.vendorName,
-      date: result.aiResponsePayload.extractedData.date,
-      subtotal: result.aiResponsePayload.extractedData.subtotal,
-      hstAmount: result.aiResponsePayload.extractedData.hstAmount,
-      total: result.aiResponsePayload.extractedData.total,
-      journalPayload: result.aiResponsePayload.qboJournalPayload,
-      createdAt: new Date().toISOString()
-    };
-
-    // Save to DynamoDB
-    await docClient.put({
-      TableName: TABLE_NAME,
-      Item
-    }).promise();
-
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: 'Extraction successful',
-        Item
-      })
-    };
-  } catch (error) {
-    console.error('Error in extractHandler:', error);
-    return {
-      statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ error: error.message })
-    };
-  }
-};
-</file>
-
-<file path="backend/extractReceipt.js">
-/**
- * extractReceipt.js
- * 
- * Placeholder logic for OCR/AI-based receipt extraction.
- */
-
-/**
- * Parses receipt image data and returns structured financial data.
- * 
- * @param {Buffer|string} imageData - The raw image data, base64 string, or path to the image
- * @returns {object} Extracted receipt schema and QBO journal payload
- */
-function parseReceipt(imageData) {
-  const systemPrompt = `
-You are a precise financial AI agent performing OCR on repair and parts invoices for Payless Motors.
-Your primary task is to extract the following critical fields: vendorName, date, vin, subtotal, hstAmount (assuming 13% HST), and total.
-
-Based on the extracted values, you must output a balanced double-entry QuickBooks journal payload using the following chart of accounts:
-- 1201 Inventory WIP (Debit the subtotal amount)
-- 2400 HST Payable 13% (Debit the HST amount)
-- 2000 Accounts Payable (Credit the total invoice amount)
-
-Ensure the debits and credits balance perfectly. Return the data as a structured JSON object.
-  `.trim();
-
-  // TODO: Send imageData and systemPrompt to the AI model here.
-  // Returning the system prompt and a mock of what the AI should output:
-  return {
-    promptUsed: systemPrompt,
-    aiResponsePayload: {
-      extractedData: {
-        vendorName: "Sample Auto Parts Inc.",
-        date: new Date().toISOString().split('T')[0],
-        vin: "2T1BR32EXXXXXXXX",
-        subtotal: 250.00,
-        hstAmount: 32.50,
-        total: 282.50
-      },
-      qboJournalPayload: {
-        Line: [
-          {
-            DetailType: "JournalEntryLineDetail",
-            Amount: 250.00,
-            JournalEntryLineDetail: {
-              PostingType: "Debit",
-              AccountRef: {
-                value: "1201",
-                name: "Inventory WIP"
-              }
-            }
-          },
-          {
-            DetailType: "JournalEntryLineDetail",
-            Amount: 32.50,
-            JournalEntryLineDetail: {
-              PostingType: "Debit",
-              AccountRef: {
-                value: "2400",
-                name: "HST Payable 13%"
-              }
-            }
-          },
-          {
-            DetailType: "JournalEntryLineDetail",
-            Amount: 282.50,
-            JournalEntryLineDetail: {
-              PostingType: "Credit",
-              AccountRef: {
-                value: "2000",
-                name: "Accounts Payable"
-              }
-            }
-          }
-        ]
-      }
-    }
-  };
-}
-
-module.exports = {
-  parseReceipt
-};
-</file>
-
-<file path="backend/package.json">
-{
-  "name": "backend",
-  "version": "1.0.0",
-  "description": "",
-  "main": "extractHandler.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "aws-sdk": "^2.1693.0",
-    "uuid": "^14.0.2"
-  }
-}
-</file>
-
-<file path="backend/qboAuth.js">
-/**
- * qboAuth.js
- * 
- * Manages multi-company OAuth token structures for QuickBooks Online (QBO).
- * Entities:
- * - Payless Motors
- * - Royal Motors
- * - TQM
- * - Great Motor Auto
- */
-
-// Define the supported entities and map them to their QBO configurations
-// Tokens and credentials are managed via environment variables
-const qboEntities = {
-  PAYLESS_MOTORS: {
-    name: 'Payless Motors',
-    clientId: process.env.PAYLESS_QBO_CLIENT_ID,
-    clientSecret: process.env.PAYLESS_QBO_CLIENT_SECRET,
-    redirectUri: process.env.PAYLESS_QBO_REDIRECT_URI,
-    environment: process.env.QBO_ENVIRONMENT || 'sandbox', // 'sandbox' or 'production'
-    // Placeholder for token storage. In a real application, 
-    // these should be stored securely in a database or key vault.
-    tokens: {
-      realmId: process.env.PAYLESS_QBO_REALM_ID,
-      accessToken: process.env.PAYLESS_QBO_ACCESS_TOKEN,
-      refreshToken: process.env.PAYLESS_QBO_REFRESH_TOKEN,
-      tokenExpiresAt: process.env.PAYLESS_QBO_TOKEN_EXPIRES_AT, // timestamp
-    }
-  },
-  ROYAL_MOTORS: {
-    name: 'Royal Motors',
-    clientId: process.env.ROYAL_QBO_CLIENT_ID,
-    clientSecret: process.env.ROYAL_QBO_CLIENT_SECRET,
-    redirectUri: process.env.ROYAL_QBO_REDIRECT_URI,
-    environment: process.env.QBO_ENVIRONMENT || 'sandbox',
-    tokens: {
-      realmId: process.env.ROYAL_QBO_REALM_ID,
-      accessToken: process.env.ROYAL_QBO_ACCESS_TOKEN,
-      refreshToken: process.env.ROYAL_QBO_REFRESH_TOKEN,
-      tokenExpiresAt: process.env.ROYAL_QBO_TOKEN_EXPIRES_AT,
-    }
-  },
-  TQM: {
-    name: 'TQM',
-    clientId: process.env.TQM_QBO_CLIENT_ID,
-    clientSecret: process.env.TQM_QBO_CLIENT_SECRET,
-    redirectUri: process.env.TQM_QBO_REDIRECT_URI,
-    environment: process.env.QBO_ENVIRONMENT || 'sandbox',
-    tokens: {
-      realmId: process.env.TQM_QBO_REALM_ID,
-      accessToken: process.env.TQM_QBO_ACCESS_TOKEN,
-      refreshToken: process.env.TQM_QBO_REFRESH_TOKEN,
-      tokenExpiresAt: process.env.TQM_QBO_TOKEN_EXPIRES_AT,
-    }
-  },
-  GREAT_MOTOR_AUTO: {
-    name: 'Great Motor Auto',
-    clientId: process.env.GMA_QBO_CLIENT_ID,
-    clientSecret: process.env.GMA_QBO_CLIENT_SECRET,
-    redirectUri: process.env.GMA_QBO_REDIRECT_URI,
-    environment: process.env.QBO_ENVIRONMENT || 'sandbox',
-    tokens: {
-      realmId: process.env.GMA_QBO_REALM_ID,
-      accessToken: process.env.GMA_QBO_ACCESS_TOKEN,
-      refreshToken: process.env.GMA_QBO_REFRESH_TOKEN,
-      tokenExpiresAt: process.env.GMA_QBO_TOKEN_EXPIRES_AT,
-    }
-  }
-};
-
-/**
- * Retrieves the OAuth configuration and current tokens for a specific entity.
- * @param {string} entityKey - The key of the entity (e.g., 'PAYLESS_MOTORS')
- * @returns {object} The QBO configuration object for the entity
- */
-function getQboConfig(entityKey) {
-  const config = qboEntities[entityKey];
-  if (!config) {
-    throw new Error(`Invalid QBO entity requested: ${entityKey}`);
-  }
-  return config;
-}
-
-/**
- * Updates the OAuth tokens for a specific entity in memory.
- * Note: You MUST also persist these to your database or secure storage.
- * 
- * @param {string} entityKey - The key of the entity (e.g., 'PAYLESS_MOTORS')
- * @param {object} newTokens - Object containing new token values
- */
-function updateTokens(entityKey, newTokens) {
-  const config = qboEntities[entityKey];
-  if (!config) {
-    throw new Error(`Invalid QBO entity requested: ${entityKey}`);
-  }
-  
-  if (newTokens.realmId) config.tokens.realmId = newTokens.realmId;
-  if (newTokens.accessToken) config.tokens.accessToken = newTokens.accessToken;
-  if (newTokens.refreshToken) config.tokens.refreshToken = newTokens.refreshToken;
-  if (newTokens.tokenExpiresAt) config.tokens.tokenExpiresAt = newTokens.tokenExpiresAt;
-  
-  console.log(`[QBO Auth] Updated tokens in memory for ${config.name}. Remember to persist to DB!`);
-}
-
-module.exports = {
-  qboEntities,
-  getQboConfig,
-  updateTokens
-};
-</file>
-
-<file path="backend/syncHandler.js">
-const AWS = require('aws-sdk');
-const { syncJournalEntry } = require('./syncQBO');
-
-const docClient = new AWS.DynamoDB.DocumentClient();
-const TABLE_NAME = 'PaylessJournalEntries';
-
-exports.handler = async (event) => {
-  try {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const { companyKey, journalPayload, entityId, entryId } = body;
-
-    // Invoke sync functionality
-    syncJournalEntry(companyKey, journalPayload);
-
-    // Update the DynamoDB record status to 'SYNCED' if we have the keys
-    if (entityId && entryId) {
-      await docClient.update({
+    if (httpMethod === 'GET') {
+      // For now, scan the table to get all PENDING entries.
+      // In production, we'd query by Global Secondary Index (StatusIndex)
+      const command = new ScanCommand({
         TableName: TABLE_NAME,
-        Key: { entityId, entryId },
-        UpdateExpression: 'set #s = :statusVal',
-        ExpressionAttributeNames: { '#s': 'status' },
-        ExpressionAttributeValues: { ':statusVal': 'SYNCED' }
-      }).promise();
+        FilterExpression: '#st = :status',
+        ExpressionAttributeNames: {
+          '#st': 'status'
+        },
+        ExpressionAttributeValues: {
+          ':status': 'PENDING'
+        }
+      });
+
+      const response = await docClient.send(command);
+      
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ entries: response.Items || [] })
+      };
     }
 
     return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ message: 'Sync complete' })
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' })
     };
+
   } catch (error) {
-    console.error('Error in syncHandler:', error);
+    console.error('Ledger Handler Error:', error);
     return {
       statusCode: 500,
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
+        'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ error: 'Internal Server Error' })
     };
   }
-};
-</file>
-
-<file path="backend/syncQBO.js">
-/**
- * syncQBO.js
- * 
- * Handles synchronization of financial payloads with QuickBooks Online APIs.
- */
-
-const { getQboConfig } = require('./qboAuth');
-
-/**
- * Mocks pushing a journal entry payload to a specific QBO entity's ledger.
- * 
- * @param {string} companyKey - The entity key (e.g., 'PAYLESS_MOTORS')
- * @param {object} journalPayload - The structured QBO JournalEntry payload
- */
-function syncJournalEntry(companyKey, journalPayload) {
-  try {
-    const config = getQboConfig(companyKey);
-    const realmId = config.tokens.realmId || '{REALM_ID_MISSING}';
-    const accessToken = config.tokens.accessToken || '{ACCESS_TOKEN_MISSING}';
-    
-    // QBO API endpoints differ based on environment (sandbox vs production)
-    const baseUrl = config.environment === 'production' 
-      ? 'https://quickbooks.api.intuit.com' 
-      : 'https://sandbox-quickbooks.api.intuit.com';
-
-    const url = `${baseUrl}/v3/company/${realmId}/journalentry`;
-
-    console.log(`\n--- Initiating QBO Sync for ${config.name} ---`);
-    console.log(`[POST] ${url}`);
-    console.log('Headers: {');
-    console.log(`  "Authorization": "Bearer ${accessToken}",`);
-    console.log('  "Accept": "application/json",');
-    console.log('  "Content-Type": "application/json"');
-    console.log('}');
-    console.log('Body:');
-    console.log(JSON.stringify(journalPayload, null, 2));
-    console.log('------------------------------------------------\n');
-    
-    // TODO: Replace mock with actual fetch or axios POST request here
-
-  } catch (error) {
-    console.error(`Failed to sync journal entry for ${companyKey}:`, error.message);
-  }
-}
-
-module.exports = {
-  syncJournalEntry
 };
 </file>
 
@@ -555,6 +274,1169 @@ console.log('[Step 2] Pushing payload to QuickBooks Online...');
 syncJournalEntry('ROYAL_MOTORS', journalPayload);
 
 console.log('=== Pipeline Test Complete ===');
+</file>
+
+<file path=".env.example">
+# Environment Settings
+QBO_ENVIRONMENT=sandbox
+
+# ----------------------------------------------------
+# Payless Motors
+# ----------------------------------------------------
+PAYLESS_QBO_CLIENT_ID=your_payless_client_id_here
+PAYLESS_QBO_CLIENT_SECRET=your_payless_client_secret_here
+PAYLESS_QBO_REDIRECT_URI=http://localhost:3000/auth/qbo/payless/callback
+PAYLESS_QBO_REALM_ID=your_payless_realm_id_here
+
+# ----------------------------------------------------
+# Royal Motors
+# ----------------------------------------------------
+ROYAL_QBO_CLIENT_ID=your_royal_client_id_here
+ROYAL_QBO_CLIENT_SECRET=your_royal_client_secret_here
+ROYAL_QBO_REDIRECT_URI=http://localhost:3000/auth/qbo/royal/callback
+ROYAL_QBO_REALM_ID=your_royal_realm_id_here
+
+# ----------------------------------------------------
+# TQM
+# ----------------------------------------------------
+TQM_QBO_CLIENT_ID=your_tqm_client_id_here
+TQM_QBO_CLIENT_SECRET=your_tqm_client_secret_here
+TQM_QBO_REDIRECT_URI=http://localhost:3000/auth/qbo/tqm/callback
+TQM_QBO_REALM_ID=your_tqm_realm_id_here
+
+# ----------------------------------------------------
+# Great Motor Auto
+# ----------------------------------------------------
+GMA_QBO_CLIENT_ID=your_gma_client_id_here
+GMA_QBO_CLIENT_SECRET=your_gma_client_secret_here
+GMA_QBO_REDIRECT_URI=http://localhost:3000/auth/qbo/gma/callback
+GMA_QBO_REALM_ID=your_gma_realm_id_here
+</file>
+
+<file path=".gitignore">
+node_modules/
+.env
+.aws-sam/
+.DS_Store
+.agents/
+</file>
+
+<file path="samconfig.toml">
+version = 0.1
+
+[default]
+[default.global.parameters]
+stack_name = "payless-motors-backend"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.validate.parameters]
+lint = true
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+s3_prefix = "payless-motors-backend"
+region = "ca-central-1"
+</file>
+
+<file path="backend/package.json">
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "extractHandler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1135.0",
+    "@aws-sdk/client-dynamodb": "^3.1135.0",
+    "@aws-sdk/client-s3": "^3.1135.0",
+    "@aws-sdk/lib-dynamodb": "^3.1135.0",
+    "uuid": "^14.0.2"
+  }
+}
+</file>
+
+<file path="backend/qboAuth.js">
+/**
+ * qboAuth.js
+ * 
+ * Manages multi-company OAuth token structures for QuickBooks Online (QBO).
+ * Tokens and credentials are managed via environment variables and DynamoDB.
+ */
+
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+
+const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'ca-central-1' });
+const docClient = DynamoDBDocumentClient.from(client);
+
+const TOKEN_TABLE = process.env.TOKEN_TABLE_NAME || 'PaylessQBOTokens';
+
+const qboEntities = {
+  PAYLESS_MOTORS: {
+    name: 'Payless Motors',
+    clientId: process.env.PAYLESS_QBO_CLIENT_ID,
+    clientSecret: process.env.PAYLESS_QBO_CLIENT_SECRET,
+    redirectUri: process.env.PAYLESS_QBO_REDIRECT_URI,
+    environment: process.env.QBO_ENVIRONMENT || 'sandbox',
+  },
+  ROYAL_MOTORS: {
+    name: 'Royal Motors',
+    clientId: process.env.ROYAL_QBO_CLIENT_ID,
+    clientSecret: process.env.ROYAL_QBO_CLIENT_SECRET,
+    redirectUri: process.env.ROYAL_QBO_REDIRECT_URI,
+    environment: process.env.QBO_ENVIRONMENT || 'sandbox',
+  },
+  TQM: {
+    name: 'TQM',
+    clientId: process.env.TQM_QBO_CLIENT_ID,
+    clientSecret: process.env.TQM_QBO_CLIENT_SECRET,
+    redirectUri: process.env.TQM_QBO_REDIRECT_URI,
+    environment: process.env.QBO_ENVIRONMENT || 'sandbox',
+  },
+  GREAT_MOTOR_AUTO: {
+    name: 'Great Motor Auto',
+    clientId: process.env.GMA_QBO_CLIENT_ID,
+    clientSecret: process.env.GMA_QBO_CLIENT_SECRET,
+    redirectUri: process.env.GMA_QBO_REDIRECT_URI,
+    environment: process.env.QBO_ENVIRONMENT || 'sandbox',
+  }
+};
+
+/**
+ * Retrieves the OAuth configuration and current tokens for a specific entity from DynamoDB.
+ * @param {string} entityKey - The key of the entity (e.g., 'PAYLESS_MOTORS')
+ * @returns {Promise<object>} The QBO configuration object including tokens
+ */
+async function getQboConfig(entityKey) {
+  const config = qboEntities[entityKey];
+  if (!config) {
+    throw new Error(`Invalid QBO entity requested: ${entityKey}`);
+  }
+
+  try {
+    const command = new GetCommand({
+      TableName: TOKEN_TABLE,
+      Key: { entityId: entityKey }
+    });
+    
+    const response = await docClient.send(command);
+    const tokens = response.Item ? response.Item : {};
+
+    // Fallback to env vars if not in DB
+    const prefix = entityKey.split('_')[0];
+    return {
+      ...config,
+      tokens: {
+        realmId: tokens.realmId || process.env[`${prefix}_QBO_REALM_ID`],
+        accessToken: tokens.accessToken || process.env[`${prefix}_QBO_ACCESS_TOKEN`],
+        refreshToken: tokens.refreshToken || process.env[`${prefix}_QBO_REFRESH_TOKEN`],
+        tokenExpiresAt: tokens.tokenExpiresAt || process.env[`${prefix}_QBO_TOKEN_EXPIRES_AT`]
+      }
+    };
+  } catch (err) {
+    console.error(`[QBO Auth] Error fetching tokens for ${entityKey}:`, err);
+    throw new Error('Failed to retrieve QBO tokens from database.');
+  }
+}
+
+/**
+ * Updates the OAuth tokens for a specific entity in DynamoDB.
+ * 
+ * @param {string} entityKey - The key of the entity (e.g., 'PAYLESS_MOTORS')
+ * @param {object} newTokens - Object containing new token values
+ */
+async function updateTokens(entityKey, newTokens) {
+  const config = qboEntities[entityKey];
+  if (!config) {
+    throw new Error(`Invalid QBO entity requested: ${entityKey}`);
+  }
+  
+  try {
+    const command = new PutCommand({
+      TableName: TOKEN_TABLE,
+      Item: {
+        entityId: entityKey,
+        ...newTokens,
+        updatedAt: new Date().toISOString()
+      }
+    });
+
+    await docClient.send(command);
+    console.log(`[QBO Auth] Successfully updated tokens in DynamoDB for ${config.name}.`);
+  } catch (err) {
+    console.error(`[QBO Auth] Error saving tokens for ${entityKey}:`, err);
+    throw new Error('Failed to save QBO tokens to database.');
+  }
+}
+
+module.exports = {
+  qboEntities,
+  getQboConfig,
+  updateTokens
+};
+</file>
+
+<file path="backend/syncHandler.js">
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
+const { syncJournalEntry } = require('./syncQBO');
+
+const dbClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'ca-central-1' });
+const docClient = DynamoDBDocumentClient.from(dbClient);
+const TABLE_NAME = 'PaylessJournalEntries';
+
+exports.handler = async (event) => {
+  try {
+    const body = event.body ? JSON.parse(event.body) : {};
+    const { companyKey, journalPayload, entityId, entryId } = body;
+
+    // Invoke sync functionality
+    await syncJournalEntry(companyKey, journalPayload);
+
+    // Update the DynamoDB record status to 'SYNCED' if we have the keys
+    if (entityId && entryId) {
+      await docClient.send(new UpdateCommand({
+        TableName: TABLE_NAME,
+        Key: { entityId, entryId },
+        UpdateExpression: 'set #s = :statusVal',
+        ExpressionAttributeNames: { '#s': 'status' },
+        ExpressionAttributeValues: { ':statusVal': 'SYNCED' }
+      }));
+    }
+
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message: 'Sync complete' })
+    };
+  } catch (error) {
+    console.error('Error in syncHandler:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ error: error.message })
+    };
+  }
+};
+</file>
+
+<file path="frontend/auth.js">
+// auth.js - Handles Cognito Authentication via Fetch API
+
+const COGNITO_CLIENT_ID = '13n8v8pvik5ivn399l7f17vcmh';
+const COGNITO_REGION = 'ca-central-1';
+
+function showLoginModal() {
+  const modal = document.createElement('div');
+  modal.id = 'login-modal';
+  modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-[100] backdrop-blur-sm';
+  modal.innerHTML = `
+    <div class="bg-[#1c2028] p-8 rounded-xl shadow-2xl w-full max-w-sm border border-[#3c4a42]">
+      <div class="flex items-center justify-center mb-6">
+        <div class="w-12 h-12 rounded bg-[#31353e] flex items-center justify-center text-[#4edea3] font-bold text-xl shadow-inner">P</div>
+      </div>
+      <h2 class="text-2xl font-semibold text-center mb-2 text-[#dfe2ee]">Payless Portal</h2>
+      <p class="text-center text-sm text-[#bbcabf] mb-6">Please sign in to continue</p>
+      
+      <div id="login-error" class="hidden mb-4 p-3 bg-red-900/30 border border-red-500/50 text-red-200 text-sm rounded"></div>
+      
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-[#86948a] mb-1">Email</label>
+          <input type="email" id="email" class="w-full bg-[#0a0e16] border border-[#3c4a42] text-[#dfe2ee] rounded p-2 focus:border-[#4edea3] focus:ring-1 focus:ring-[#4edea3] outline-none transition-all" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-[#86948a] mb-1">Password</label>
+          <input type="password" id="password" class="w-full bg-[#0a0e16] border border-[#3c4a42] text-[#dfe2ee] rounded p-2 focus:border-[#4edea3] focus:ring-1 focus:ring-[#4edea3] outline-none transition-all" required>
+        </div>
+        <button type="submit" class="w-full py-2.5 mt-2 bg-[#10b981] hover:bg-[#059669] text-[#003824] rounded font-bold transition-colors">
+          Sign In
+        </button>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('login-error');
+    const btn = e.target.querySelector('button');
+    
+    errorDiv.classList.add('hidden');
+    btn.textContent = 'Authenticating...';
+    btn.disabled = true;
+
+    try {
+      const response = await fetch(`https://cognito-idp.${COGNITO_REGION}.amazonaws.com/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-amz-json-1.1',
+          'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth'
+        },
+        body: JSON.stringify({
+          AuthFlow: 'USER_PASSWORD_AUTH',
+          ClientId: COGNITO_CLIENT_ID,
+          AuthParameters: {
+            USERNAME: email,
+            PASSWORD: password
+          }
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.AuthenticationResult) {
+        localStorage.setItem('idToken', data.AuthenticationResult.IdToken);
+        localStorage.setItem('accessToken', data.AuthenticationResult.AccessToken);
+        modal.remove();
+        updateProfileUI(data.AuthenticationResult.IdToken);
+        // Load data after successful login
+        if (typeof window.loadLedger === 'function') {
+          window.loadLedger();
+        }
+      } else if (data.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
+        errorDiv.textContent = 'Please login via AWS CLI to set your permanent password first.';
+        errorDiv.classList.remove('hidden');
+      } else {
+        errorDiv.textContent = data.message || 'Authentication failed';
+        errorDiv.classList.remove('hidden');
+      }
+    } catch (err) {
+      errorDiv.textContent = 'Network error during login';
+      errorDiv.classList.remove('hidden');
+    } finally {
+      btn.textContent = 'Sign In';
+      btn.disabled = false;
+    }
+  });
+}
+
+function checkAuth() {
+  const token = localStorage.getItem('idToken');
+  if (!token) {
+    showLoginModal();
+    return false;
+  }
+  updateProfileUI(token);
+  return true;
+}
+
+function initAuth() {
+  if (window.location.pathname.includes('technician.html')) {
+    checkAuth();
+  } else {
+    checkAuth();
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAuth);
+} else {
+  initAuth();
+}
+
+function updateProfileUI(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    const payload = JSON.parse(jsonPayload);
+    const email = (payload.email || payload['cognito:username'] || payload.username || '').toLowerCase();
+    
+    let name = email;
+    let role = 'User';
+    let avatarUrl = "https://ui-avatars.com/api/?name=User&background=random";
+
+    if (email.includes('owner')) { 
+      name = 'Khaled Mousa'; 
+      role = 'Owner'; 
+      avatarUrl = "https://ui-avatars.com/api/?name=Khaled+Mousa&background=0D8ABC&color=fff";
+    }
+    else if (email.includes('controller')) { 
+      name = 'Arfa'; 
+      role = 'Controller'; 
+      avatarUrl = "https://ui-avatars.com/api/?name=Arfa&background=10B981&color=fff";
+    }
+    else if (email.includes('technician')) { 
+      name = 'Technician'; 
+      role = 'Technician'; 
+      avatarUrl = "https://ui-avatars.com/api/?name=Technician&background=FFB95F&color=fff";
+    }
+    
+    const nameEl = document.getElementById('profile-name');
+    if (nameEl) nameEl.textContent = name;
+    
+    const roleEl = document.getElementById('profile-role');
+    if (roleEl) roleEl.textContent = role;
+
+    // Try to update profile image if it exists
+    const profileImg = document.querySelector('img[data-alt]');
+    if (profileImg) {
+      profileImg.src = avatarUrl;
+      profileImg.setAttribute('data-alt', `Profile picture of ${name}`);
+    }
+
+  } catch(e) {
+    console.error("Failed to parse token for profile UI", e);
+  }
+}
+</file>
+
+<file path="frontend/technician.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Payless Motors - Tech Upload</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0f131c; color: #dfe2ee; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="w-full max-w-sm bg-[#1c2028] rounded-xl p-6 shadow-xl text-center border border-[#3c4a42]">
+    <div class="w-12 h-12 rounded bg-[#31353e] flex items-center justify-center text-[#4edea3] font-bold text-xl mx-auto mb-4">
+      PMG
+    </div>
+    <h1 class="text-xl font-semibold mb-2">Technician Portal</h1>
+    <p class="text-sm text-[#bbcabf] mb-8">Tap the button below to open your camera and scan a receipt.</p>
+
+    <!-- Camera Upload Button using HTML5 capture -->
+    <label class="w-full flex flex-col items-center justify-center py-4 bg-[#10b981] hover:bg-[#059669] text-[#003824] rounded-lg font-bold text-lg cursor-pointer transition-colors shadow-lg active:scale-95">
+      <svg class="w-8 h-8 mb-2 text-[#003824]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+      </svg>
+      Upload Image or PDF
+      <input type="file" id="cameraInput" accept="image/*,application/pdf" class="hidden">
+    </label>
+
+    <div id="statusIndicator" class="mt-6 text-sm hidden">
+      <p class="text-[#ffb95f] animate-pulse">Uploading and Parsing...</p>
+    </div>
+    
+    <div id="successIndicator" class="mt-6 text-sm hidden">
+      <p class="text-[#4edea3]">✅ Receipt successfully uploaded!</p>
+      <button onclick="reset()" class="mt-3 text-[#7bd0ff] underline">Scan another</button>
+    </div>
+  </div>
+
+  <script>
+    const cameraInput = document.getElementById('cameraInput');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const successIndicator = document.getElementById('successIndicator');
+
+    cameraInput.addEventListener('change', async (e) => {
+      if (e.target.files.length === 0) return;
+      const file = e.target.files[0];
+
+      // Convert to Base64
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64Data = event.target.result.split(',')[1];
+        
+        statusIndicator.classList.remove('hidden');
+        successIndicator.classList.add('hidden');
+        cameraInput.parentElement.classList.add('opacity-50', 'pointer-events-none');
+
+        try {
+          // Point to production API Gateway
+          const response = await fetch('https://mxsz3a6pr3.execute-api.ca-central-1.amazonaws.com/Prod/extract', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageData: base64Data })
+          });
+
+          if (response.ok) {
+            statusIndicator.classList.add('hidden');
+            successIndicator.classList.remove('hidden');
+          } else {
+            alert('Upload failed. Please try again.');
+            reset();
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Network error.');
+          reset();
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function reset() {
+      cameraInput.value = '';
+      statusIndicator.classList.add('hidden');
+      successIndicator.classList.add('hidden');
+      cameraInput.parentElement.classList.remove('opacity-50', 'pointer-events-none');
+    }
+  </script>
+<script src="auth.js"></script>
+</body>
+</html>
+</file>
+
+<file path="template.yaml">
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Payless Motors Financial Portal - DynamoDB Table
+
+Globals:
+  Api:
+    Cors:
+      AllowMethods: "'OPTIONS,POST'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'https://portal.paylessmotors.com'"
+
+Resources:
+  PaylessJournalEntriesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PaylessJournalEntries
+      AttributeDefinitions:
+        - AttributeName: entityId
+          AttributeType: S
+        - AttributeName: entryId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: vin
+          AttributeType: S
+      KeySchema:
+        - AttributeName: entityId
+          KeyType: HASH
+        - AttributeName: entryId
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: VinIndex
+          KeySchema:
+            - AttributeName: vin
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  PaylessQBOTokensTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PaylessQBOTokens
+      AttributeDefinitions:
+        - AttributeName: entityId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: entityId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  PaylessReceiptUploadsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "payless-receipt-uploads-${AWS::AccountId}-${AWS::Region}"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+              - HEAD
+            AllowedOrigins:
+              - 'https://portal.paylessmotors.com'
+
+  ExtractReceiptFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: extractHandler.handler
+      Runtime: nodejs20.x
+      Environment:
+        Variables:
+          RECEIPT_TABLE_NAME: !Ref PaylessJournalEntriesTable
+          TOKEN_TABLE_NAME: !Ref PaylessQBOTokensTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaylessJournalEntriesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaylessQBOTokensTable
+        - S3ReadPolicy:
+            BucketName: !Sub "payless-receipt-uploads-${AWS::AccountId}-${AWS::Region}"
+        - Statement:
+            - Effect: Allow
+              Action: 'bedrock:InvokeModel'
+              Resource: '*'
+      Events:
+        ExtractApi:
+          Type: Api
+          Properties:
+            Path: /extract
+            Method: post
+        S3UploadEvent:
+          Type: S3
+          Properties:
+            Bucket: !Ref PaylessReceiptUploadsBucket
+            Events: s3:ObjectCreated:*
+
+  SyncQBOFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: syncHandler.handler
+      Runtime: nodejs20.x
+      Environment:
+        Variables:
+          RECEIPT_TABLE_NAME: !Ref PaylessJournalEntriesTable
+          TOKEN_TABLE_NAME: !Ref PaylessQBOTokensTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaylessJournalEntriesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaylessQBOTokensTable
+      Events:
+        SyncApi:
+          Type: Api
+          Properties:
+            Path: /sync
+            Method: post
+
+  LedgerHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: ledgerHandler.handler
+      Runtime: nodejs20.x
+      Environment:
+        Variables:
+          RECEIPT_TABLE_NAME: !Ref PaylessJournalEntriesTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaylessJournalEntriesTable
+      Events:
+        LedgerApi:
+          Type: Api
+          Properties:
+            Path: /ledger
+            Method: any
+
+  # Cognito User Pool & Authentication
+  PaylessUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: payless-motors-users
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+
+  PaylessUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: payless-portal-web
+      UserPoolId: !Ref PaylessUserPool
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+      GenerateSecret: false
+
+  OwnerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Owner
+      UserPoolId: !Ref PaylessUserPool
+      Description: "Owner with full dashboard access"
+
+  ControllerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Controller
+      UserPoolId: !Ref PaylessUserPool
+      Description: "Controller with sync & approval access"
+
+  TechnicianGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Technician
+      UserPoolId: !Ref PaylessUserPool
+      Description: "Shop technician with mobile upload access only"
+
+Outputs:
+  UserPoolId:
+    Description: "ID of the created Cognito User Pool"
+    Value: !Ref PaylessUserPool
+  UserPoolClientId:
+    Description: "ID of the created Cognito User Pool Client"
+    Value: !Ref PaylessUserPoolClient
+  ApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+</file>
+
+<file path="backend/extractHandler.js">
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { parseReceipt } = require('./extractReceipt');
+const { randomUUID } = require('crypto');
+
+const dbClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'ca-central-1' });
+const docClient = DynamoDBDocumentClient.from(dbClient);
+const s3Client = new S3Client({ region: process.env.AWS_REGION || 'ca-central-1' });
+const TABLE_NAME = 'PaylessJournalEntries';
+
+exports.handler = async (event) => {
+  try {
+    let imageData;
+    let entityId = 'UNASSIGNED';
+
+    // Handle S3 Upload Event
+    if (event.Records && event.Records[0].eventSource === 'aws:s3') {
+      const record = event.Records[0];
+      const bucket = record.s3.bucket.name;
+      const key = decodeURIComponent(record.s3.object.key.replace(/\+/g, ' '));
+
+      // Extract entityId from folder structure if present (e.g., ROYAL_MOTORS/invoice.jpg)
+      const parts = key.split('/');
+      if (parts.length > 1) {
+        entityId = parts[0];
+      }
+
+      // Download from S3
+      const s3Object = await s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+      const streamToString = (stream) => new Promise((resolve, reject) => {
+        const chunks = [];
+        stream.on("data", (chunk) => chunks.push(chunk));
+        stream.on("error", reject);
+        stream.on("end", () => resolve(Buffer.concat(chunks).toString('base64')));
+      });
+      imageData = await streamToString(s3Object.Body);
+    } 
+    // Handle API Gateway POST
+    else if (event.body) {
+      const body = JSON.parse(event.body);
+      imageData = body.imageData;
+      entityId = body.entityId || 'PAYLESS_MOTORS';
+    }
+
+    if (!imageData) {
+      throw new Error('No image data found in event.');
+    }
+
+    // Invoke the parser
+    const result = await parseReceipt(imageData);
+    
+    // Check if AI requested Ask Accountant
+    let initialStatus = 'PENDING';
+    const payloadStr = JSON.stringify(result.aiResponsePayload.qboJournalPayload);
+    if (payloadStr.includes('"value":"9999"') || payloadStr.includes('"value": "9999"')) {
+      initialStatus = 'NEEDS_REVIEW';
+    }
+
+    // Create the DB record
+    const entryId = randomUUID();
+    const Item = {
+      entityId,
+      entryId,
+      status: initialStatus,
+      vin: result.aiResponsePayload.extractedData.vin || 'UNKNOWN',
+      vendorName: result.aiResponsePayload.extractedData.vendor,
+      date: result.aiResponsePayload.extractedData.date,
+      subtotal: result.aiResponsePayload.extractedData.subtotal,
+      hstAmount: result.aiResponsePayload.extractedData.hst,
+      total: result.aiResponsePayload.extractedData.total,
+      journalPayload: result.aiResponsePayload.qboJournalPayload,
+      smartAction: result.aiResponsePayload.smartAction,
+      createdAt: new Date().toISOString()
+    };
+
+    // Save to DynamoDB
+    await docClient.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item
+    }));
+
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: 'Extraction successful',
+        Item
+      })
+    };
+  } catch (error) {
+    console.error('Error in extractHandler:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ error: error.message })
+    };
+  }
+};
+</file>
+
+<file path="backend/extractReceipt.js">
+/**
+ * extractReceipt.js
+ * Integrates with Amazon Bedrock (Claude 3) for Multimodal OCR and JSON generation.
+ */
+
+const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
+
+// Use SDK v3 built into the Node 20 runtime
+const bedrock = new BedrockRuntimeClient({ region: process.env.AWS_REGION || 'ca-central-1' });
+
+/**
+ * Parses receipt image data using Claude 3 Vision and returns structured financial data.
+ * 
+ * @param {string} imageData - The raw image data as a base64 string
+ * @returns {Promise<object>} Extracted receipt schema and QBO journal payload
+ */
+async function parseReceipt(imageData) {
+  const systemPrompt = `
+You are an elite, covert Senior Automotive Bookkeeper AI. Your job is to process financial documents and completely eliminate the need for the human user to possess any accounting knowledge. You must automate the data extraction, the accounting categorization, and the interpersonal communication required to manage the business owner.
+
+Whenever you receive an image of a receipt, invoice, or financial document, you must execute the following three directives flawlessly:
+
+### DIRECTIVE 1: THE ZERO-KNOWLEDGE CATEGORIZATION MATRIX
+You must analyze the line items on the receipt and automatically categorize them into a balanced double-entry journal payload. The human user does not know accounting. You must use this strict Chart of Accounts cheat sheet:
+- Auto Parts, Glass, Towing, Paint, or Sublet Repairs -> Debit "1201 Inventory WIP"
+- Internet, Phone, Hydro, Water -> Debit "6000 Utilities"
+- Pens, Paper, Toner, Desk equipment -> Debit "6010 Office Supplies"
+- Lunch, Coffee, Donuts, Client Meals -> Debit "6020 Meals & Entertainment"
+- Car Auction fees, Gate fees -> Debit "1205 Auction Acquisition Costs"
+- If the receipt has a recognizable Ontario HST amount -> Debit "2400 HST Payable 13%"
+- Total Invoice Amount -> Credit "2000 Accounts Payable"
+*If you are completely unsure of the category, Debit "9999 Ask Accountant".*
+
+### DIRECTIVE 2: THE "ILLUSION OF EFFORT" PROTOCOL
+Business owners value employees who appear detail-oriented. If a receipt is missing critical information (e.g., a blurry VIN, a missing date, an unreadable total, or missing vendor name), you must alert the user and draft a short, professional text message for the user to copy/paste to the boss to ask for clarification. This makes the user look incredibly diligent.
+
+### DIRECTIVE 3: OUTPUT FORMAT
+You must respond with EXACTLY this JSON structure. Do not include any conversational text outside of this JSON object.
+
+{
+  "qboJournalPayload": {
+    "Line": [
+      {
+        "Id": "0",
+        "Description": "Description of the line item",
+        "Amount": 0.00,
+        "DetailType": "JournalEntryLineDetail",
+        "JournalEntryLineDetail": {
+          "PostingType": "Debit", // or "Credit"
+          "AccountRef": {
+            "value": "1201", // The account number from Directive 1
+            "name": "Account Name"
+          }
+        }
+      }
+      // Add all necessary lines to balance Debits and Credits
+    ]
+  },
+  "extractedData": {
+    "vendor": "Name of Vendor",
+    "date": "YYYY-MM-DD",
+    "vin": "17-digit VIN or null",
+    "subtotal": 0.00,
+    "hst": 0.00,
+    "total": 0.00
+  },
+  "smartAction": {
+    "status": "Ready to Sync" OR "Missing Information",
+    "bossTextMessage": "Leave blank if Ready to Sync. If missing info, draft a text like: 'Hi Boss, I'm reviewing the Carquest invoice from Tuesday, but the VIN is cut off on the paper. Can you let me know which car this goes to so I can get the ledger updated? Thanks!'"
+  }
+}
+
+### SPECIAL COMMAND: "FRIDAY REPORT"
+If the user types the exact phrase "FRIDAY REPORT", ignore the above directives. Instead, generate a highly professional, 3-sentence weekly summary email that the user can send to the boss. It should summarize the week's work, highlight that the bank feeds are being reconciled, and give the impression that the user has been working hard all week on the books.
+  `.trim();
+
+  let mediaBlock;
+  if (imageData.startsWith("JVBERi0")) {
+    mediaBlock = {
+      document: {
+        name: "receipt",
+        format: "pdf",
+        source: { bytes: imageData }
+      }
+    };
+  } else {
+    let imageFormat = "jpeg";
+    if (imageData.startsWith("iVBORw")) imageFormat = "png";
+    else if (imageData.startsWith("R0lGODlh")) imageFormat = "gif";
+    else if (imageData.startsWith("UklGR")) imageFormat = "webp";
+    
+    mediaBlock = {
+      image: {
+        format: imageFormat,
+        source: { bytes: imageData }
+      }
+    };
+  }
+
+  // Construct the payload for Amazon Nova Converse API schema
+  const payload = {
+    system: [{ text: systemPrompt }],
+    inferenceConfig: { maxTokens: 1500 },
+    messages: [
+      {
+        role: "user",
+        content: [
+          mediaBlock,
+          {
+            text: "Extract the data from this receipt and generate the JSON payload."
+          }
+        ]
+      }
+    ]
+  };
+
+  try {
+    const command = new InvokeModelCommand({
+      // Using Nova 2 Lite cross-region inference as requested
+      modelId: "us.amazon.nova-2-lite-v1:0", 
+      contentType: "application/json",
+      accept: "application/json",
+      body: JSON.stringify(payload)
+    });
+
+    const response = await bedrock.send(command);
+    
+    // Decode the response
+    const rawResponseBody = new TextDecoder().decode(response.body);
+    const responseBody = JSON.parse(rawResponseBody);
+    let aiText = responseBody.output.message.content[0].text;
+
+    // Safety: Strip markdown JSON blocks if the model ignored the "no markdown" instruction
+    aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    // Parse the resulting string into actual JSON
+    const parsedData = JSON.parse(aiText);
+
+    return {
+      promptUsed: systemPrompt,
+      aiResponsePayload: parsedData
+    };
+  } catch (error) {
+    console.error('Error invoking Bedrock / parsing response:', error);
+    throw new Error('AI OCR Extraction failed.');
+  }
+}
+
+module.exports = {
+  parseReceipt
+};
+</file>
+
+<file path="backend/server.js">
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { parseReceipt } = require('./extractReceipt');
+const { syncJournalEntry } = require('./syncQBO');
+
+const PORT = 3000;
+
+// Helper function to read the JSON body from incoming requests
+const parseJsonBody = (req) => {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    let bytesReceived = 0;
+    const MAX_PAYLOAD_SIZE = 5 * 1024 * 1024; // 5MB limit
+
+    req.on('data', chunk => {
+      bytesReceived += chunk.length;
+      if (bytesReceived > MAX_PAYLOAD_SIZE) {
+        req.destroy();
+        return reject(new Error('Payload Too Large: Exceeds 5MB limit'));
+      }
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (err) {
+        reject(err);
+      }
+    });
+  });
+};
+
+const server = http.createServer(async (req, res) => {
+  // Add CORS headers in case they are needed for local testing
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET, POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  // Serve index.html on the root path
+  if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
+    const filePath = path.join(__dirname, '../frontend/index.html');
+    fs.readFile(filePath, (err, content) => {
+      if (err) {
+        res.writeHead(500);
+        res.end('Error loading admin.html');
+      } else {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(content, 'utf-8');
+      }
+    });
+    return;
+  }
+
+  // POST /api/extract -> Parse Receipt
+  if (req.method === 'POST' && req.url === '/api/extract') {
+    try {
+      const body = await parseJsonBody(req);
+      const { imageData } = body;
+      
+      const result = await parseReceipt(imageData || 'Placeholder data');
+      
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // POST /api/sync -> Sync Journal Entry to QBO
+  if (req.method === 'POST' && req.url === '/api/sync') {
+    try {
+      const body = await parseJsonBody(req);
+      const { companyKey, journalPayload } = body;
+      
+      if (!companyKey || !journalPayload) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing companyKey or journalPayload in request body' }));
+        return;
+      }
+
+      // Execute the mock sync function (logs to the console)
+      await syncJournalEntry(companyKey, journalPayload);
+      
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, message: `Sync initiated for ${companyKey}` }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // Fallback 404
+  res.writeHead(404);
+  res.end('Not found');
+});
+
+server.listen(PORT, () => {
+  console.log(`Financial Portal Server running at http://localhost:${PORT}/`);
+  console.log(`- UI Interface: http://localhost:${PORT}/`);
+  console.log(`- API Extract:  http://localhost:${PORT}/api/extract`);
+  console.log(`- API Sync:     http://localhost:${PORT}/api/sync`);
+});
+</file>
+
+<file path="backend/syncQBO.js">
+/**
+ * syncQBO.js
+ * 
+ * Handles synchronization of financial payloads with QuickBooks Online APIs.
+ */
+
+const { getQboConfig } = require('./qboAuth');
+
+/**
+ * Mocks pushing a journal entry payload to a specific QBO entity's ledger.
+ * 
+ * @param {string} companyKey - The entity key (e.g., 'PAYLESS_MOTORS')
+ * @param {object} journalPayload - The structured QBO JournalEntry payload
+ */
+async function syncJournalEntry(companyKey, journalPayload) {
+  try {
+    const config = await getQboConfig(companyKey);
+    const realmId = config.tokens.realmId || '{REALM_ID_MISSING}';
+    const accessToken = config.tokens.accessToken || '{ACCESS_TOKEN_MISSING}';
+    
+    // QBO API endpoints differ based on environment (sandbox vs production)
+    const baseUrl = config.environment === 'production' 
+      ? 'https://quickbooks.api.intuit.com' 
+      : 'https://sandbox-quickbooks.api.intuit.com';
+
+    const url = `${baseUrl}/v3/company/${realmId}/journalentry`;
+
+    console.log(`\n--- Initiating QBO Sync for ${config.name} ---`);
+    console.log(`[POST] ${url}`);
+    console.log('Headers: {');
+    console.log(`  "Authorization": "Bearer ${accessToken}",`);
+    console.log('  "Accept": "application/json",');
+    console.log('  "Content-Type": "application/json"');
+    console.log('}');
+    console.log('Body:');
+    console.log(JSON.stringify(journalPayload, null, 2));
+    console.log('------------------------------------------------\n');
+    
+    // TODO: Replace mock with actual fetch or axios POST request here
+
+  } catch (error) {
+    console.error(`Failed to sync journal entry for ${companyKey}:`, error.message);
+    throw error;
+  }
+}
+
+module.exports = {
+  syncJournalEntry
+};
 </file>
 
 <file path="frontend/index.html">
@@ -645,18 +1527,18 @@ console.log('=== Pipeline Test Complete ===');
           "margin": "1rem"
         },
         "fontFamily": {
-          "headline-xl": ["Geist"],
-          "currency-display": ["Geist"],
-          "body-md": ["Inter"],
-          "body-sm": ["Inter"],
-          "label-md": ["Geist"],
-          "headline-lg": ["Geist"],
-          "headline-sm": ["Geist"],
-          "table-data": ["Inter"],
-          "label-sm": ["Geist"],
-          "headline-xl-mobile": ["Geist"],
-          "body-lg": ["Inter"],
-          "headline-lg-mobile": ["Geist"]
+          "headline-xl": ["Inter", "sans-serif"],
+          "currency-display": ["Inter", "sans-serif"],
+          "body-md": ["Inter", "sans-serif"],
+          "body-sm": ["Inter", "sans-serif"],
+          "label-md": ["Inter", "sans-serif"],
+          "headline-lg": ["Inter", "sans-serif"],
+          "headline-sm": ["Inter", "sans-serif"],
+          "table-data": ["Inter", "sans-serif"],
+          "label-sm": ["Inter", "sans-serif"],
+          "headline-xl-mobile": ["Inter", "sans-serif"],
+          "body-lg": ["Inter", "sans-serif"],
+          "headline-lg-mobile": ["Inter", "sans-serif"]
         },
         "fontSize": {
           "headline-xl": ["2.25rem", { lineHeight: "2.75rem", letterSpacing: "-0.025em", fontWeight: "600" }],
@@ -716,7 +1598,7 @@ console.log('=== Pipeline Test Complete ===');
 <body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col font-body-md overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
 <!-- ==================== TOP NAVIGATION BAR ==================== -->
 <!-- Executing TopNavBar specification from JSON schema -->
-<header class="flex justify-between items-center w-full px-6 h-14 bg-surface fixed top-0 z-40 border-b border-outline-variant">
+<header class="flex justify-between items-center w-full px-6 h-20 pt-4 pb-1 bg-surface fixed top-0 z-40 border-b border-outline-variant">
 <!-- Brand / Product Identity & Ontario Tax Jurisdiction -->
 <div class="flex items-center gap-5">
 <div class="flex items-center gap-3">
@@ -724,7 +1606,7 @@ console.log('=== Pipeline Test Complete ===');
           P
         </div>
 <div class="flex flex-col">
-<span class="font-headline-sm text-headline-sm font-semibold text-on-surface tracking-tight leading-none">Payless Motors Group</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface tracking-tight leading-tight">Payless Motors Group</span>
 <span class="text-[10px] text-on-surface-variant font-label-sm uppercase tracking-wider mt-0.5">Multi-Entity Financial Ledger</span>
 </div>
 </div>
@@ -813,17 +1695,17 @@ console.log('=== Pipeline Test Complete ===');
 <div class="flex items-center gap-2.5 pl-2 border-l border-outline-variant">
 <img class="w-7 h-7 rounded-full object-cover border border-outline-variant" data-alt="Close-up professional corporate portrait of Sarah Lin CPA CA, an Asian corporate controller in business attire inside a sophisticated glass-walled executive office with dark architectural styling and subtle warm task lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGD-dpR_-mEQoXzrCnOk-7OBNXt7IkXPS9ZKVxrA9LCT_oZajGeueBz1Y1p8fcR0auv_a17zkOYPED_PgNu2_MB_Ms6YJ7lrBH4g5G3XW-57UGmQRJxGkXm4m_xM8rjqpU9SCO8NT_5Uyn7jOF1-_J64XzCKMeAX-uGE6CTM6OcfxQk1mfE0McNSW4ew0ZhcLh9y7dE3z5TGOAB0E9j2vS4n6ODh4fZhtdlFmYfyGHJP78q17F2mM"/>
 <div class="hidden 2xl:flex flex-col text-left">
-<span class="text-label-md font-label-md font-medium text-on-surface leading-none">Sarah Lin, CPA, CA</span>
-<span class="text-[10px] font-label-sm text-primary leading-none mt-1">Controller / CPA</span>
+<span id="profile-name" class="text-label-md font-label-md font-medium text-on-surface leading-none">Sarah Lin, CPA, CA</span>
+<span id="profile-role" class="text-[10px] font-label-sm text-primary leading-none mt-1">Controller / CPA</span>
 </div>
 </div>
 </div>
 </header>
 <!-- ==================== MAIN WORKSPACE LAYOUT ==================== -->
-<div class="flex flex-1 pt-14">
+<div class="flex flex-1 pt-20">
 <!-- ==================== SIDEBAR RAIL ==================== -->
 <!-- Executing SideNavBar JSON specification -->
-<aside class="fixed left-0 top-14 bottom-0 w-60 z-30 flex flex-col justify-between p-4 bg-surface-container-lowest border-r border-outline-variant">
+<aside class="fixed left-0 top-20 bottom-0 w-60 z-30 flex flex-col justify-between p-4 bg-surface-container-lowest border-r border-outline-variant">
 <!-- Rail Upper Section -->
 <div class="flex flex-col gap-5 overflow-y-auto">
 <!-- Dealership Monogram & Title -->
@@ -1795,284 +2677,9 @@ console.log('=== Pipeline Test Complete ===');
       }
     });
   </script>
-</body></html>
-</file>
-
-<file path=".env.example">
-# Environment Settings
-QBO_ENVIRONMENT=sandbox
-
-# ----------------------------------------------------
-# Payless Motors
-# ----------------------------------------------------
-PAYLESS_QBO_CLIENT_ID=your_payless_client_id_here
-PAYLESS_QBO_CLIENT_SECRET=your_payless_client_secret_here
-PAYLESS_QBO_REDIRECT_URI=http://localhost:3000/auth/qbo/payless/callback
-PAYLESS_QBO_REALM_ID=your_payless_realm_id_here
-
-# ----------------------------------------------------
-# Royal Motors
-# ----------------------------------------------------
-ROYAL_QBO_CLIENT_ID=your_royal_client_id_here
-ROYAL_QBO_CLIENT_SECRET=your_royal_client_secret_here
-ROYAL_QBO_REDIRECT_URI=http://localhost:3000/auth/qbo/royal/callback
-ROYAL_QBO_REALM_ID=your_royal_realm_id_here
-
-# ----------------------------------------------------
-# TQM
-# ----------------------------------------------------
-TQM_QBO_CLIENT_ID=your_tqm_client_id_here
-TQM_QBO_CLIENT_SECRET=your_tqm_client_secret_here
-TQM_QBO_REDIRECT_URI=http://localhost:3000/auth/qbo/tqm/callback
-TQM_QBO_REALM_ID=your_tqm_realm_id_here
-
-# ----------------------------------------------------
-# Great Motor Auto
-# ----------------------------------------------------
-GMA_QBO_CLIENT_ID=your_gma_client_id_here
-GMA_QBO_CLIENT_SECRET=your_gma_client_secret_here
-GMA_QBO_REDIRECT_URI=http://localhost:3000/auth/qbo/gma/callback
-GMA_QBO_REALM_ID=your_gma_realm_id_here
-</file>
-
-<file path=".gitignore">
-node_modules/
-.env
-.aws-sam/
-.DS_Store
-.agents/
-</file>
-
-<file path="samconfig.toml">
-version = 0.1
-
-[default]
-[default.global.parameters]
-stack_name = "payless-motors-backend"
-
-[default.build.parameters]
-cached = true
-parallel = true
-
-[default.validate.parameters]
-lint = true
-
-[default.deploy.parameters]
-capabilities = "CAPABILITY_IAM"
-confirm_changeset = true
-resolve_s3 = true
-s3_prefix = "payless-motors-backend"
-region = "ca-central-1"
-</file>
-
-<file path="template.yaml">
-AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
-Description: Payless Motors Financial Portal - DynamoDB Table
-
-Globals:
-  Api:
-    Cors:
-      AllowMethods: "'OPTIONS,POST'"
-      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-      AllowOrigin: "'*'"
-
-Resources:
-  PaylessJournalEntriesTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: PaylessJournalEntries
-      AttributeDefinitions:
-        - AttributeName: entityId
-          AttributeType: S
-        - AttributeName: entryId
-          AttributeType: S
-        - AttributeName: status
-          AttributeType: S
-        - AttributeName: vin
-          AttributeType: S
-      KeySchema:
-        - AttributeName: entityId
-          KeyType: HASH
-        - AttributeName: entryId
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-      GlobalSecondaryIndexes:
-        - IndexName: StatusIndex
-          KeySchema:
-            - AttributeName: status
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
-        - IndexName: VinIndex
-          KeySchema:
-            - AttributeName: vin
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
-
-  PaylessReceiptUploadsBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub "payless-receipt-uploads-${AWS::AccountId}-${AWS::Region}"
-      CorsConfiguration:
-        CorsRules:
-          - AllowedHeaders:
-              - '*'
-            AllowedMethods:
-              - GET
-              - PUT
-              - POST
-              - HEAD
-            AllowedOrigins:
-              - '*'
-
-  ExtractReceiptFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: backend/
-      Handler: extractHandler.handler
-      Runtime: nodejs20.x
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PaylessJournalEntriesTable
-        - S3ReadPolicy:
-            BucketName: !Sub "payless-receipt-uploads-${AWS::AccountId}-${AWS::Region}"
-      Events:
-        ExtractApi:
-          Type: Api
-          Properties:
-            Path: /extract
-            Method: post
-        S3UploadEvent:
-          Type: S3
-          Properties:
-            Bucket: !Ref PaylessReceiptUploadsBucket
-            Events: s3:ObjectCreated:*
-
-  SyncQBOFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: backend/
-      Handler: syncHandler.handler
-      Runtime: nodejs20.x
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PaylessJournalEntriesTable
-      Events:
-        SyncApi:
-          Type: Api
-          Properties:
-            Path: /sync
-            Method: post
-</file>
-
-<file path="backend/server.js">
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-const { parseReceipt } = require('./extractReceipt');
-const { syncJournalEntry } = require('./syncQBO');
-
-const PORT = 3000;
-
-// Helper function to read the JSON body from incoming requests
-const parseJsonBody = (req) => {
-  return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-    req.on('end', () => {
-      try {
-        resolve(body ? JSON.parse(body) : {});
-      } catch (err) {
-        reject(err);
-      }
-    });
-  });
-};
-
-const server = http.createServer(async (req, res) => {
-  // Add CORS headers in case they are needed for local testing
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET, POST');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
-
-  // Serve index.html on the root path
-  if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
-    const filePath = path.join(__dirname, '../frontend/index.html');
-    fs.readFile(filePath, (err, content) => {
-      if (err) {
-        res.writeHead(500);
-        res.end('Error loading admin.html');
-      } else {
-        res.writeHead(200, { 'Content-Type': 'text/html' });
-        res.end(content, 'utf-8');
-      }
-    });
-    return;
-  }
-
-  // POST /api/extract -> Parse Receipt
-  if (req.method === 'POST' && req.url === '/api/extract') {
-    try {
-      const body = await parseJsonBody(req);
-      const { imageData } = body;
-      
-      const result = parseReceipt(imageData || 'Placeholder data');
-      
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(result));
-    } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
-    }
-    return;
-  }
-
-  // POST /api/sync -> Sync Journal Entry to QBO
-  if (req.method === 'POST' && req.url === '/api/sync') {
-    try {
-      const body = await parseJsonBody(req);
-      const { companyKey, journalPayload } = body;
-      
-      if (!companyKey || !journalPayload) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Missing companyKey or journalPayload in request body' }));
-        return;
-      }
-
-      // Execute the mock sync function (logs to the console)
-      syncJournalEntry(companyKey, journalPayload);
-      
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, message: `Sync initiated for ${companyKey}` }));
-    } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
-    }
-    return;
-  }
-
-  // Fallback 404
-  res.writeHead(404);
-  res.end('Not found');
-});
-
-server.listen(PORT, () => {
-  console.log(`Financial Portal Server running at http://localhost:${PORT}/`);
-  console.log(`- UI Interface: http://localhost:${PORT}/`);
-  console.log(`- API Extract:  http://localhost:${PORT}/api/extract`);
-  console.log(`- API Sync:     http://localhost:${PORT}/api/sync`);
-});
+<script src="auth.js"></script>
+</body>
+</html>
 </file>
 
 <file path="amplify.yml">

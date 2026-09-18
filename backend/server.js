@@ -36,9 +36,9 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Serve admin.html on the root path
-  if (req.method === 'GET' && (req.url === '/' || req.url === '/admin.html')) {
-    const filePath = path.join(__dirname, '../frontend/admin.html');
+  // Serve index.html on the root path
+  if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
+    const filePath = path.join(__dirname, '../frontend/index.html');
     fs.readFile(filePath, (err, content) => {
       if (err) {
         res.writeHead(500);

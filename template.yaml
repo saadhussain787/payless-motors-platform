@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Payless Motors Financial Portal - DynamoDB Table
+
+Globals:
+  Api:
+    Cors:
+      AllowMethods: "'OPTIONS,POST'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
+
+Resources:
+  PaylessJournalEntriesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PaylessJournalEntries
+      AttributeDefinitions:
+        - AttributeName: entityId
+          AttributeType: S
+        - AttributeName: entryId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: vin
+          AttributeType: S
+      KeySchema:
+        - AttributeName: entityId
+          KeyType: HASH
+        - AttributeName: entryId
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: VinIndex
+          KeySchema:
+            - AttributeName: vin
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  PaylessReceiptUploadsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "payless-receipt-uploads-${AWS::AccountId}-${AWS::Region}"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+              - HEAD
+            AllowedOrigins:
+              - '*'
+
+  ExtractReceiptFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: extractHandler.handler
+      Runtime: nodejs20.x
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaylessJournalEntriesTable
+        - S3ReadPolicy:
+            BucketName: !Sub "payless-receipt-uploads-${AWS::AccountId}-${AWS::Region}"
+      Events:
+        ExtractApi:
+          Type: Api
+          Properties:
+            Path: /extract
+            Method: post
+        S3UploadEvent:
+          Type: S3
+          Properties:
+            Bucket: !Ref PaylessReceiptUploadsBucket
+            Events: s3:ObjectCreated:*
+
+  SyncQBOFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: syncHandler.handler
+      Runtime: nodejs20.x
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaylessJournalEntriesTable
+      Events:
+        SyncApi:
+          Type: Api
+          Properties:
+            Path: /sync
+            Method: post

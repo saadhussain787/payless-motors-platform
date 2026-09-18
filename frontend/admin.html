@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Payless Motors Group - Financial Portal &amp; Multi-Entity Ledger</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Inter & Geist Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Forms and Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-primary-fixed": "#002113",
+          "secondary-fixed-dim": "#ffb95f",
+          "surface-container-highest": "#31353e",
+          "on-primary-container": "#00422b",
+          "on-primary-fixed-variant": "#005236",
+          "tertiary-fixed": "#c4e7ff",
+          "tertiary-container": "#19aee8",
+          "on-surface-variant": "#bbcabf",
+          "inverse-surface": "#dfe2ee",
+          "on-background": "#dfe2ee",
+          "inverse-on-surface": "#2c3039",
+          "surface-container-lowest": "#0a0e16",
+          "on-secondary-fixed-variant": "#653e00",
+          "on-surface": "#dfe2ee",
+          "tertiary": "#7bd0ff",
+          "on-secondary": "#472a00",
+          "primary-fixed-dim": "#4edea3",
+          "outline": "#86948a",
+          "on-primary": "#003824",
+          "inverse-primary": "#006c49",
+          "secondary-container": "#ee9800",
+          "on-tertiary-fixed": "#001e2c",
+          "surface": "#0f131c",
+          "outline-variant": "#3c4a42",
+          "surface-bright": "#353942",
+          "error": "#ffb4ab",
+          "surface-tint": "#4edea3",
+          "primary-container": "#10b981",
+          "surface-variant": "#31353e",
+          "surface-container-low": "#181c24",
+          "on-error": "#690005",
+          "primary": "#4edea3",
+          "error-container": "#93000a",
+          "on-tertiary-fixed-variant": "#004c69",
+          "on-tertiary-container": "#003e55",
+          "background": "#0f131c",
+          "surface-container": "#1c2028",
+          "secondary-fixed": "#ffddb8",
+          "on-error-container": "#ffdad6",
+          "on-secondary-container": "#5b3800",
+          "surface-container-high": "#262a33",
+          "on-secondary-fixed": "#2a1700",
+          "on-tertiary": "#00354a",
+          "tertiary-fixed-dim": "#7bd0ff",
+          "secondary": "#ffb95f",
+          "surface-dim": "#0f131c",
+          "primary-fixed": "#6ffbbe"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.125rem",
+          "lg": "0.25rem",
+          "xl": "0.5rem",
+          "full": "0.75rem"
+        },
+        "spacing": {
+          "gutter": "1rem",
+          "margin-desktop": "2rem",
+          "space-lg": "1.25rem",
+          "space-sm": "0.5rem",
+          "space-xs": "0.25rem",
+          "space-md": "0.875rem",
+          "gutter-desktop": "1.5rem",
+          "space-xl": "2rem",
+          "margin": "1rem"
+        },
+        "fontFamily": {
+          "headline-xl": ["Geist"],
+          "currency-display": ["Geist"],
+          "body-md": ["Inter"],
+          "body-sm": ["Inter"],
+          "label-md": ["Geist"],
+          "headline-lg": ["Geist"],
+          "headline-sm": ["Geist"],
+          "table-data": ["Inter"],
+          "label-sm": ["Geist"],
+          "headline-xl-mobile": ["Geist"],
+          "body-lg": ["Inter"],
+          "headline-lg-mobile": ["Geist"]
+        },
+        "fontSize": {
+          "headline-xl": ["2.25rem", { lineHeight: "2.75rem", letterSpacing: "-0.025em", fontWeight: "600" }],
+          "currency-display": ["1.875rem", { lineHeight: "2.25rem", letterSpacing: "-0.03em", fontWeight: "600" }],
+          "body-md": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0em", fontWeight: "400" }],
+          "body-sm": ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.01em", fontWeight: "400" }],
+          "label-md": ["0.8125rem", { lineHeight: "1.125rem", letterSpacing: "0.02em", fontWeight: "500" }],
+          "headline-lg": ["1.5rem", { lineHeight: "2rem", letterSpacing: "-0.02em", fontWeight: "600" }],
+          "headline-sm": ["1.125rem", { lineHeight: "1.5rem", letterSpacing: "-0.01em", fontWeight: "500" }],
+          "table-data": ["0.8125rem", { lineHeight: "1.125rem", letterSpacing: "-0.005em", fontWeight: "400" }],
+          "label-sm": ["0.6875rem", { lineHeight: "0.875rem", letterSpacing: "0.05em", fontWeight: "600" }],
+          "headline-xl-mobile": ["1.75rem", { lineHeight: "2.25rem", letterSpacing: "-0.02em", fontWeight: "600" }],
+          "body-lg": ["1rem", { lineHeight: "1.5rem", letterSpacing: "0em", fontWeight: "400" }],
+          "headline-lg-mobile": ["1.25rem", { lineHeight: "1.75rem", letterSpacing: "-0.015em", fontWeight: "600" }]
+        }
+      }
+    }
+  }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 1.125rem;
+      line-height: 1;
+      display: inline-block;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      vertical-align: middle;
+    }
+    /* Monospace for tabular precision */
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    /* Custom thin scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0e16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #262a33;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3c4a42;
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col font-body-md overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- ==================== TOP NAVIGATION BAR ==================== -->
+<!-- Executing TopNavBar specification from JSON schema -->
+<header class="flex justify-between items-center w-full px-6 h-14 bg-surface fixed top-0 z-40 border-b border-outline-variant">
+<!-- Brand / Product Identity & Ontario Tax Jurisdiction -->
+<div class="flex items-center gap-5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary font-headline-sm font-bold tracking-tight shadow-inner">
+          P
+        </div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface tracking-tight leading-none">Payless Motors Group</span>
+<span class="text-[10px] text-on-surface-variant font-label-sm uppercase tracking-wider mt-0.5">Multi-Entity Financial Ledger</span>
+</div>
+</div>
+<div class="h-5 w-px bg-outline-variant hidden sm:block"></div>
+<!-- Ontario Jurisdiction Badge -->
+<div class="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-low border border-outline-variant text-[11px] text-primary font-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span>FY2025 - Q2 | Ontario Tax</span>
+<span class="text-on-surface-variant text-[10px] pl-1 border-l border-outline-variant">HST 13% Active</span>
+</div>
+<!-- Interactive Entity Switcher Dropdown -->
+<div class="relative ml-2">
+<button class="flex items-center gap-2 px-2.5 py-1.5 rounded bg-surface-container-low border border-outline-variant hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors duration-150" id="entityDropdownBtn">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-medium text-primary">Payless Motors</span>
+<span class="text-on-surface-variant text-[11px] font-normal">(Main Corp #001)</span>
+<span class="material-symbols-outlined text-outline text-sm">expand_more</span>
+</button>
+<!-- Dropdown Menu -->
+<div class="hidden absolute top-full left-0 mt-1.5 w-64 bg-surface-container border border-outline-variant rounded shadow-2xl py-1 z-50" id="entityDropdown">
+<div class="px-3 py-1.5 text-[10px] font-label-sm uppercase text-on-surface-variant border-b border-outline-variant font-semibold">Select Operating Entity</div>
+<button class="w-full text-left px-3 py-2 flex items-center justify-between text-label-md font-label-md bg-surface-container-high text-primary">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>Payless Motors <span class="text-on-surface-variant text-xs">(#001)</span></span>
+</div>
+<span class="material-symbols-outlined text-xs">check</span>
+</button>
+<button class="w-full text-left px-3 py-2 flex items-center justify-between text-label-md font-label-md text-on-surface hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span>Royal Motors <span class="text-on-surface-variant text-xs">(Etobicoke)</span></span>
+</div>
+</button>
+<button class="w-full text-left px-3 py-2 flex items-center justify-between text-label-md font-label-md text-on-surface hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span>Toronto Quality Motors <span class="text-on-surface-variant text-xs">(TQM)</span></span>
+</div>
+</button>
+<button class="w-full text-left px-3 py-2 flex items-center justify-between text-label-md font-label-md text-on-surface hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span>Great Motor Auto <span class="text-on-surface-variant text-xs">(Mississauga)</span></span>
+</div>
+</button>
+<div class="border-t border-outline-variant my-1"></div>
+<button class="w-full text-left px-3 py-2 flex items-center gap-2 text-label-md font-label-md text-tertiary hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-sm">layers</span>
+<span>Consolidated View (All 4 Entities)</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Navigation Links from JSON (Desktop Entity Links) -->
+<div class="hidden xl:flex items-center gap-6 h-full">
+<a class="text-primary font-semibold border-b-2 border-primary h-full flex items-center text-label-md font-label-md px-1" href="#">Payless Motors</a>
+<a class="text-on-surface-variant hover:text-on-surface h-full flex items-center text-label-md font-label-md px-1 transition-colors" href="#">Royal Motors</a>
+<a class="text-on-surface-variant hover:text-on-surface h-full flex items-center text-label-md font-label-md px-1 transition-colors" href="#">Toronto Quality Motors</a>
+<a class="text-on-surface-variant hover:text-on-surface h-full flex items-center text-label-md font-label-md px-1 transition-colors" href="#">Great Motor Auto</a>
+</div>
+<!-- Global Search & Actions Header Cluster -->
+<div class="flex items-center gap-3">
+<!-- Search Box with Monospace Hotkey Hint -->
+<div class="relative hidden lg:flex items-center">
+<span class="material-symbols-outlined absolute left-2.5 text-on-surface-variant text-sm pointer-events-none">search</span>
+<input class="bg-surface-container-lowest border border-outline-variant text-on-surface placeholder:text-outline text-body-sm font-body-sm rounded pl-8 pr-12 py-1.5 h-8 w-64 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="Search VIN, PO#, Vendor, Cheque#..." type="text"/>
+<kbd class="absolute right-2 px-1.5 py-0.5 rounded bg-surface-container-high text-[10px] text-on-surface-variant font-mono">⌘K</kbd>
+</div>
+<!-- Multi-QBO Sync Pill -->
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-low border border-outline-variant text-label-sm font-label-sm text-primary">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="hidden md:inline">4/4 QBO Connected</span>
+</div>
+<!-- Action Icons from JSON: notifications, help -->
+<div class="flex items-center gap-1 border-l border-outline-variant pl-2">
+<button class="relative p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" title="Notifications">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-secondary rounded-full ring-2 ring-surface"></span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" title="System Documentation">
+<span class="material-symbols-outlined">help</span>
+</button>
+</div>
+<!-- Controller Profile Chip -->
+<div class="flex items-center gap-2.5 pl-2 border-l border-outline-variant">
+<img class="w-7 h-7 rounded-full object-cover border border-outline-variant" data-alt="Close-up professional corporate portrait of Sarah Lin CPA CA, an Asian corporate controller in business attire inside a sophisticated glass-walled executive office with dark architectural styling and subtle warm task lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGD-dpR_-mEQoXzrCnOk-7OBNXt7IkXPS9ZKVxrA9LCT_oZajGeueBz1Y1p8fcR0auv_a17zkOYPED_PgNu2_MB_Ms6YJ7lrBH4g5G3XW-57UGmQRJxGkXm4m_xM8rjqpU9SCO8NT_5Uyn7jOF1-_J64XzCKMeAX-uGE6CTM6OcfxQk1mfE0McNSW4ew0ZhcLh9y7dE3z5TGOAB0E9j2vS4n6ODh4fZhtdlFmYfyGHJP78q17F2mM"/>
+<div class="hidden 2xl:flex flex-col text-left">
+<span class="text-label-md font-label-md font-medium text-on-surface leading-none">Sarah Lin, CPA, CA</span>
+<span class="text-[10px] font-label-sm text-primary leading-none mt-1">Controller / CPA</span>
+</div>
+</div>
+</div>
+</header>
+<!-- ==================== MAIN WORKSPACE LAYOUT ==================== -->
+<div class="flex flex-1 pt-14">
+<!-- ==================== SIDEBAR RAIL ==================== -->
+<!-- Executing SideNavBar JSON specification -->
+<aside class="fixed left-0 top-14 bottom-0 w-60 z-30 flex flex-col justify-between p-4 bg-surface-container-lowest border-r border-outline-variant">
+<!-- Rail Upper Section -->
+<div class="flex flex-col gap-5 overflow-y-auto">
+<!-- Dealership Monogram & Title -->
+<div class="flex items-center gap-3 px-1">
+<div class="w-9 h-9 rounded bg-surface-container-high border border-outline-variant flex items-center justify-center font-bold text-primary text-sm shadow">
+            PMG
+          </div>
+<div>
+<div class="font-headline-sm text-headline-sm font-bold text-on-surface leading-tight">Payless Group</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Multi-Entity Ledger</div>
+</div>
+</div>
+<!-- Review CTA Banner Pill -->
+<div class="bg-surface-container-low border border-outline-variant rounded p-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary-container"></span>
+<span class="text-label-sm font-label-sm text-on-surface font-semibold">Review 14 Pending</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-secondary text-on-secondary font-label-sm text-[10px] font-bold">14</span>
+</div>
+<!-- Navigation Tabs: Core Navigation (JSON defined: Dashboard, Pending Entries, QuickBooks Sync, Export Reports) -->
+<nav class="space-y-1">
+<div class="text-[10px] font-label-sm uppercase tracking-wider text-outline px-2 py-1 font-semibold">Core Management</div>
+<!-- Active Tab: Dashboard -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded bg-surface-container-high text-primary font-medium border-l-2 border-primary transition-all duration-100 ease-in-out" href="#">
+<span class="material-symbols-outlined text-primary" data-weight="fill">dashboard</span>
+<span class="text-label-md font-label-md">Dashboard</span>
+</a>
+<!-- Pending Entries with Badge -->
+<a class="flex items-center justify-between px-3 py-2.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="text-label-md font-label-md">Pending Entries</span>
+</div>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-highest text-secondary text-[11px] font-mono font-semibold">14</span>
+</a>
+<!-- QuickBooks Sync -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">sync_alt</span>
+<span class="text-label-md font-label-md">QuickBooks Sync</span>
+</a>
+<!-- Export Reports -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">file_download</span>
+<span class="text-label-md font-label-md">Export Reports</span>
+</a>
+</nav>
+<!-- Navigation Tabs: Dealership Financials & Compliance -->
+<nav class="space-y-1 pt-2 border-t border-outline-variant">
+<div class="text-[10px] font-label-sm uppercase tracking-wider text-outline px-2 py-1 font-semibold">Reconciliation &amp; Liens</div>
+<a class="flex items-center justify-between px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">account_balance</span>
+<span class="text-label-md font-label-md">HST Audit Ready</span>
+</div>
+<span class="text-[9px] px-1 py-0.5 rounded bg-primary-container text-on-primary-container font-mono font-bold">CRA</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined">directions_car</span>
+<span class="text-label-md font-label-md">Floor Plan Liens</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined">swap_horiz</span>
+<span class="text-label-md font-label-md">Inter-Entity Splits</span>
+</a>
+</nav>
+</div>
+<!-- Rail Footer Section (JSON Defined: Audit Logs, System Settings + System Health) -->
+<div class="pt-3 border-t border-outline-variant space-y-2">
+<!-- Live System Metric Telemetry -->
+<div class="p-2 rounded bg-surface-container-low border border-outline-variant text-[11px] font-mono space-y-1">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span>QBO API Ping:</span>
+<span class="text-primary font-semibold">24ms (Optimal)</span>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant">
+<span>Security:</span>
+<span class="text-tertiary">AES-256 CRA Ok</span>
+</div>
+</div>
+<nav class="space-y-0.5">
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">history</span>
+<span class="text-label-md font-label-md">Audit Logs</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">settings</span>
+<span class="text-label-md font-label-md">System Settings</span>
+</a>
+</nav>
+</div>
+</aside>
+<!-- ==================== MAIN CONTENT CANVAS ==================== -->
+<main class="flex-1 ml-60 p-6 lg:p-8 space-y-6 max-w-[1720px]">
+<!-- Top Section Header with Title and Fast Action Export -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+<div>
+<div class="flex items-center gap-3">
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Dealership Financial Ledger</h1>
+<span class="px-2.5 py-1 rounded bg-surface-container-high border border-outline-variant text-label-sm font-label-sm text-primary">
+              All 4 Entities Synchronized
+            </span>
+</div>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1">
+            Automated OCR ledger reconciliation, vehicle reconditioning allocation, and 13% Ontario HST ITC tracking.
+          </p>
+</div>
+<!-- Export Shortcuts & Timeframe Filter -->
+<div class="flex items-center gap-2">
+<div class="flex items-center bg-surface-container-low border border-outline-variant rounded p-0.5">
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded bg-surface-container-high text-primary font-medium">This Week</button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded text-on-surface-variant hover:text-on-surface transition-colors">Jun 2025</button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded text-on-surface-variant hover:text-on-surface transition-colors">FY25 YTD</button>
+</div>
+<!-- Direct Excel Export Shortcut -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container-low border border-outline-variant hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-sm text-primary">table_view</span>
+<span>Export .XLSX</span>
+</button>
+</div>
+</div>
+<!-- ==================== OVERVIEW KPI METRIC CARDS (Bento Grid) ==================== -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Metric 1: Total Pending Sync -->
+<div class="bg-surface-container-low rounded p-4 relative overflow-hidden group hover:bg-surface-container transition-colors shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Total Pending Sync</span>
+<span class="p-1 rounded bg-surface-container-high text-primary">
+<span class="material-symbols-outlined text-base">sync</span>
+</span>
+</div>
+<div class="mt-2 text-currency-display font-currency-display text-on-surface tabular-nums">
+            CAD $142,850.40
+          </div>
+<div class="mt-2 flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">14 Journal Entries</span>
+<span class="text-primary font-medium">Across 4 Entities</span>
+</div>
+<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
+</div>
+<!-- Metric 2: 13% Ontario HST Recoverable -->
+<div class="bg-surface-container-low rounded p-4 relative overflow-hidden group hover:bg-surface-container transition-colors shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">13% Ontario HST (ITCs)</span>
+<span class="p-1 rounded bg-surface-container-high text-tertiary">
+<span class="material-symbols-outlined text-base">shield_with_heart</span>
+</span>
+</div>
+<div class="mt-2 text-currency-display font-currency-display text-on-surface tabular-nums">
+            CAD $18,570.55
+          </div>
+<div class="mt-2 flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Input Tax Credits (CRA)</span>
+<span class="text-tertiary font-medium">100% Verified</span>
+</div>
+<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-tertiary"></div>
+</div>
+<!-- Metric 3: Reconditioning WIP (Account 1201) -->
+<div class="bg-surface-container-low rounded p-4 relative overflow-hidden group hover:bg-surface-container transition-colors shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Reconditioning WIP (1201)</span>
+<span class="p-1 rounded bg-surface-container-high text-primary-fixed">
+<span class="material-symbols-outlined text-base">build</span>
+</span>
+</div>
+<div class="mt-2 text-currency-display font-currency-display text-on-surface tabular-nums">
+            CAD $89,320.00
+          </div>
+<div class="mt-2 flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Vehicle Parts &amp; Sublet</span>
+<span class="text-on-surface-variant font-mono">19 Active VINs</span>
+</div>
+<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-outline-variant"></div>
+</div>
+<!-- Metric 4: Unassigned Dealer Receipts (Urgent Alert) -->
+<div class="bg-surface-container-low rounded p-4 relative overflow-hidden group hover:bg-surface-container transition-colors shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-secondary uppercase tracking-wider font-semibold">Unassigned Receipts</span>
+<span class="p-1 rounded bg-secondary-container/20 text-secondary">
+<span class="material-symbols-outlined text-base">warning</span>
+</span>
+</div>
+<div class="mt-2 text-currency-display font-currency-display text-secondary tabular-nums">
+            CAD $4,120.00
+          </div>
+<div class="mt-2 flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">3 Actionable Invoices</span>
+<span class="text-secondary font-medium underline cursor-pointer">Assign Entity</span>
+</div>
+<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary"></div>
+</div>
+</div>
+<!-- ==================== ALERT BANNER: UNASSIGNED RECEIPTS QUEUE ==================== -->
+<!-- Styled strictly per design system Amber/Alert Token standards -->
+<section class="rounded border border-secondary-container/40 bg-[#1e1910] p-5 space-y-4">
+<!-- Banner Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-secondary-container/20 pb-3 cursor-pointer hover:bg-secondary-container/5 transition-colors -mx-5 px-5 -mt-5 pt-5" onclick="document.getElementById('action-cards-container').classList.toggle('hidden')">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary text-xl mt-0.5" data-weight="fill">warning</span>
+<div>
+<h2 class="text-headline-sm font-headline-sm font-semibold text-secondary">
+                Action Required: 3 AI-Ingested Receipts Unassigned to Dealership Entity
+              </h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">
+                Our OCR parsing detected receipts from shared corporate accounts (Manheim, Carquest, Impact). Assign each receipt to the correct corporate dealership before QuickBooks batch sync.
+              </p>
+</div>
+</div>
+<div class="flex items-center gap-2 self-start sm:self-auto">
+<span class="px-2 py-1 rounded bg-secondary-container text-on-secondary font-label-sm text-label-sm font-bold">
+              3 Requires Review
+            </span>
+<span class="material-symbols-outlined text-secondary ml-2">expand_less</span>
+</div>
+</div>
+<!-- Mini Interactive Receipt Assignment Queue -->
+<div id="action-cards-container" class="grid grid-cols-1 lg:grid-cols-3 gap-3 pt-1">
+<!-- Item 1: Manheim Toronto -->
+<div class="p-3.5 rounded bg-surface border border-outline-variant hover:border-secondary transition-colors flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-md font-label-md font-semibold text-on-surface">Manheim Toronto Auto Auction</span>
+<span class="text-label-sm font-label-sm font-mono text-primary bg-surface-container-high px-1.5 py-0.5 rounded">98% OCR</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">Transport &amp; Gate Hauling Fee</p>
+<div class="mt-2.5 grid grid-cols-3 items-center text-body-sm font-body-sm py-1.5 px-2 bg-surface-container-lowest rounded border border-outline-variant">
+<span class="text-on-surface font-semibold font-mono tabular-nums text-left">$1,450.00</span>
+<span class="text-[11px] text-on-surface-variant font-mono text-center">HST: $188.50</span>
+<span class="text-[11px] text-primary font-mono font-bold text-right">Total: $1,638.50</span>
+</div>
+<div class="mt-2 text-[11px] font-mono text-on-surface-variant flex items-center gap-1">
+<span class="text-outline">VIN:</span>
+<span class="text-tertiary bg-surface-container-high px-1 py-0.2 rounded">2T2BZMCA5NC198234</span>
+</div>
+</div>
+<!-- 1-Click Assignment Buttons -->
+<div class="mt-3.5 pt-2.5 border-t border-outline-variant">
+<span class="text-[10px] uppercase font-label-sm text-outline block mb-1.5 font-semibold">1-Click Entity Allocation:</span>
+<div class="grid grid-cols-2 gap-1.5">
+<button class="px-2 py-1 text-label-sm font-label-sm rounded bg-surface-container-high text-on-surface hover:bg-primary-container hover:text-on-primary-container font-medium transition-colors text-center border border-outline-variant">
+                  Payless (#001)
+                </button>
+<button class="px-2 py-1 text-label-sm font-label-sm rounded bg-surface-container-high text-on-surface hover:bg-primary-container hover:text-on-primary-container font-medium transition-colors text-center border border-outline-variant">
+                  Royal Motors
+                </button>
+<button class="px-2 py-1 text-label-sm font-label-sm rounded bg-surface-container-high text-on-surface hover:bg-primary-container hover:text-on-primary-container font-medium transition-colors text-center border border-outline-variant">
+                  TQM Scarborough
+                </button>
+<button class="px-2 py-1 text-label-sm font-label-sm rounded bg-surface-container-high text-on-surface hover:bg-primary-container hover:text-on-primary-container font-medium transition-colors text-center border border-outline-variant">
+                  Great Motor
+                </button>
+</div>
+</div>
+</div>
+<!-- Item 2: Carquest Auto Parts Mississauga -->
+<div class="p-3.5 rounded bg-surface border border-outline-variant hover:border-secondary transition-colors flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-md font-label-md font-semibold text-on-surface">Carquest Auto Parts Miss.</span>
+<span class="text-label-sm font-label-sm font-mono text-secondary bg-surface-container-high px-1.5 py-0.5 rounded">No VIN Found</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">Brake Rotors, Pads &amp; Caliper Kits</p>
+<div class="mt-2.5 grid grid-cols-3 items-center text-body-sm font-body-sm py-1.5 px-2 bg-surface-container-lowest rounded border border-outline-variant">
+<span class="text-on-surface font-semibold font-mono tabular-nums text-left">$860.00</span>
+<span class="text-[11px] text-on-surface-variant font-mono text-center">HST: $111.80</span>
+<span class="text-[11px] text-primary font-mono font-bold text-right">Total: $971.80</span>
+</div>
+<div class="mt-2 text-[11px] font-mono text-secondary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">help_outline</span>
+<input type="text" placeholder="Enter 17-digit VIN..." class="bg-surface-container-lowest border border-secondary/40 text-on-surface rounded px-2 py-0.5 w-full focus:border-secondary focus:outline-none placeholder:text-secondary/50" />
+</div>
+</div>
+<!-- 1-Click Assignment Buttons -->
+<div class="mt-3.5 pt-2.5 border-t border-outline-variant">
+<span class="text-[10px] uppercase font-label-sm text-outline block mb-1.5 font-semibold">1-Click Entity Allocation:</span>
+<div class="grid grid-cols-2 gap-1.5">
+<button class="px-2 py-1 text-label-sm font-label-sm rounded bg-surface-container-high text-on-surface hover:bg-primary-container hover:text-on-primary-container font-medium transition-colors text-center border border-outline-variant">
+                  Payless (#001)
+                </button>
+<button class="px-2 py-1 text-label-sm font-label-sm rounded bg-surface-container-high text-on-surface hover:bg-primary-container hover:text-on-primary-container font-medium transition-colors text-center border border-outline-variant">
+                  Royal Motors
+                </button>
+<button class="px-2 py-1 text-label-sm font-label-sm rounded bg-surface-container-high text-on-surface hover:bg-primary-container hover:text-on-primary-container font-medium transition-colors text-center border border-outline-variant">
+                  TQM Scarborough
+                </button>
+<button class="px-2 py-1 text-label-sm font-label-sm rounded bg-surface-container-high text-on-surface hover:bg-primary-container hover:text-on-primary-container font-medium transition-colors text-center border border-outline-variant">
+                  Great Motor
+                </button>
+</div>
+</div>
+</div>
+<!-- Item 3: Impact Auto Auctions Stouffville -->
+<div class="p-3.5 rounded bg-surface border border-outline-variant hover:border-secondary transition-colors flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-md font-label-md font-semibold text-on-surface">Impact Auto Auctions Stouffville</span>
+<span class="text-label-sm font-label-sm font-mono text-primary bg-surface-container-high px-1.5 py-0.5 rounded">99% OCR</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">Salvage Rebuild Parts &amp; Front Clip</p>
+<div class="mt-2.5 grid grid-cols-3 items-center text-body-sm font-body-sm py-1.5 px-2 bg-surface-container-lowest rounded border border-outline-variant">
+<span class="text-on-surface font-semibold font-mono tabular-nums text-left">$1,810.00</span>
+<span class="text-[11px] text-on-surface-variant font-mono text-center">HST: $235.30</span>
+<span class="text-[11px] text-primary font-mono font-bold text-right">Total: $2,045.30</span>
+</div>
+<div class="mt-2 text-[11px] font-mono text-on-surface-variant flex items-center gap-1">
+<span class="text-outline">VIN:</span>
+<span class="text-tertiary bg-surface-container-high px-1 py-0.2 rounded">1G1YY22W565104921</span>
+</div>
+</div>
+<!-- 1-Click Assignment Buttons -->
+<div class="mt-3.5 pt-2.5 border-t border-outline-variant">
+<span class="text-[10px] uppercase font-label-sm text-outline block mb-1.5 font-semibold">1-Click Entity Allocation:</span>
+<div class="grid grid-cols-2 gap-1.5">
+<button class="px-2 py-1 text-label-sm font-label-sm rounded bg-surface-container-high text-on-surface hover:bg-primary-container hover:text-on-primary-container font-medium transition-colors text-center border border-outline-variant">
+                  Payless (#001)
+                </button>
+<button class="px-2 py-1 text-label-sm font-label-sm rounded bg-surface-container-high text-on-surface hover:bg-primary-container hover:text-on-primary-container font-medium transition-colors text-center border border-outline-variant">
+                  Royal Motors
+                </button>
+<button class="px-2 py-1 text-label-sm font-label-sm rounded bg-surface-container-high text-on-surface hover:bg-primary-container hover:text-on-primary-container font-medium transition-colors text-center border border-outline-variant">
+                  TQM Scarborough
+                </button>
+<button class="px-2 py-1 text-label-sm font-label-sm rounded bg-surface-container-high text-on-surface hover:bg-primary-container hover:text-on-primary-container font-medium transition-colors text-center border border-outline-variant">
+                  Great Motor
+                </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ==================== UPLOAD RECEIPTS DROPZONE ==================== -->
+<section class="mb-8">
+  <div id="receiptDropzone" class="border-2 border-dashed border-outline-variant rounded-lg p-8 flex flex-col items-center justify-center bg-surface-container-low hover:bg-surface-container hover:border-primary transition-colors cursor-pointer relative group">
+    <input type="file" id="receiptFileInput" class="hidden" accept=".jpg,.png,.pdf" multiple>
+    
+    <div id="dropzoneContent" class="text-center flex flex-col items-center pointer-events-none">
+      <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-2 group-hover:text-primary transition-colors">cloud_upload</span>
+      <h3 class="font-title-md text-on-surface mb-1">Drag & Drop Receipts</h3>
+      <p class="font-body-sm text-on-surface-variant">or click to browse from your device</p>
+      <p class="font-label-sm text-on-surface-variant mt-2 opacity-70">Supports JPG, PNG, PDF</p>
+    </div>
+
+    <!-- Upload Progress / Parsing State -->
+    <div id="uploadProgress" class="hidden flex-col items-center pointer-events-none">
+      <span class="material-symbols-outlined text-4xl text-primary animate-pulse mb-2">document_scanner</span>
+      <h3 class="font-title-md text-on-surface mb-1">Parsing Receipt...</h3>
+      <p class="font-body-sm text-on-surface-variant" id="uploadStatusText">Extracting details via AI</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== MAIN VIEW: PENDING AI JOURNAL ENTRIES TABLE ==================== -->
+<section class="bg-surface-container-low border border-outline-variant rounded overflow-hidden">
+<!-- Table Control & Filter Bar -->
+<div class="p-4 border-b border-outline-variant flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 bg-surface">
+<div class="flex flex-wrap items-center gap-2.5">
+<!-- Filter: Entity Filter -->
+<div class="relative">
+<select id="entityFilterSelect" class="bg-surface-container-lowest border border-outline-variant text-on-surface font-label-md text-label-md rounded px-3 py-1.5 h-9 pr-8 focus:border-primary focus:ring-1 focus:ring-primary appearance-none">
+<option value="All">All Entities (4)</option>
+<option>Payless Motors (#001)</option>
+<option>Royal Motors (Etobicoke)</option>
+<option>Toronto Quality Motors</option>
+<option>Great Motor Auto</option>
+</select>
+<span class="material-symbols-outlined text-outline absolute right-2 top-2 text-base pointer-events-none">filter_list</span>
+</div>
+<!-- Filter: Account Code Quick Select -->
+<div class="relative">
+<select class="bg-surface-container-lowest border border-outline-variant text-on-surface font-label-md text-label-md rounded px-3 py-1.5 h-9 pr-8 focus:border-primary focus:ring-1 focus:ring-primary appearance-none">
+<option>All Accounts</option>
+<option>1201 - Inventory WIP (Reconditioning)</option>
+<option>2400 - HST Paid on Purchases (ITC)</option>
+<option>5010 - Vehicle Prep &amp; Detailing</option>
+<option>1205 - Auction Acquisition Costs</option>
+</select>
+<span class="material-symbols-outlined text-outline absolute right-2 top-2 text-base pointer-events-none">account_tree</span>
+</div>
+<!-- Filter: Search VIN or Vendor -->
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-outline text-base pointer-events-none">search</span>
+<input class="bg-surface-container-lowest border border-outline-variant text-on-surface text-body-sm font-body-sm rounded pl-8 pr-3 py-1.5 h-9 w-52 focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Filter by VIN or Vendor..." type="text"/>
+</div>
+<!-- Date Range Badge -->
+<div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-surface-container border border-outline-variant text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-xs">calendar_today</span>
+<span>Jun 12 – Jun 19, 2025</span>
+</div>
+</div>
+<!-- Prominent Approval Action Button -->
+<div class="flex items-center gap-3">
+<span class="text-body-sm font-body-sm text-on-surface-variant hidden md:inline">
+<span class="text-primary font-semibold font-mono">14</span> entries verified
+            </span>
+<!-- Primary Approval Button per Design System -->
+<button class="flex items-center gap-2 px-4 py-2 rounded bg-primary-container hover:bg-[#34d399] active:bg-[#059669] text-on-primary-container font-headline-sm font-semibold text-sm transition-all duration-100 ease-out shadow">
+<span class="material-symbols-outlined text-base">bolt</span>
+<span>Approve &amp; Sync All Selected to QuickBooks (14)</span>
+</button>
+</div>
+</div>
+<!-- Dense Ledger Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<!-- Header Row -->
+<thead>
+<tr class="h-9 bg-surface-container-lowest border-b border-outline-variant text-label-sm font-label-sm text-outline uppercase tracking-wider">
+<th class="w-10 px-3 text-center">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant text-primary focus:ring-0 focus:ring-offset-0" type="checkbox"/>
+</th>
+<th class="px-3">Date</th>
+<th class="px-3">Entity Location</th>
+<th class="px-3">Vendor / Payee</th>
+<th class="px-3">Vehicle VIN</th>
+<th class="px-3 text-right">Subtotal</th>
+<th class="px-3 text-right">13% HST</th>
+<th class="px-3 text-right">Total (CAD)</th>
+<th class="px-3">Account Allocation</th>
+<th class="px-3 text-center">AI Confidence</th>
+<th class="px-3 text-right">Ledger Action</th>
+</tr>
+</thead>
+<!-- Data Rows (Zebra Striping per Design System) -->
+<tbody class="divide-y divide-outline-variant font-table-data text-table-data text-on-surface">
+<!-- ROW 1 -->
+<tr class="h-11 bg-surface-container-low hover:bg-surface-container-high transition-colors group">
+<td class="px-3 text-center">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant text-primary focus:ring-0" type="checkbox"/>
+</td>
+<td class="px-3 text-on-surface-variant font-mono text-xs whitespace-nowrap">Jun 18, 2025</td>
+<td class="px-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container border border-outline-variant text-primary font-medium">
+                    Payless Motors
+                  </span>
+</td>
+<td class="px-3 font-medium text-on-surface whitespace-nowrap">ADESA Toronto Auctions</td>
+<td class="px-3 whitespace-nowrap font-mono text-xs text-tertiary">
+<div class="flex items-center gap-1.5">
+<span>2T2BZMCA5NC198234</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface transition-opacity" title="Copy VIN">
+<span class="material-symbols-outlined text-xs">content_copy</span>
+</button>
+</div>
+</td>
+<td class="px-3 text-right tabular-nums font-mono">$3,200.00</td>
+<td class="px-3 text-right tabular-nums font-mono text-on-surface-variant">$416.00</td>
+<td class="px-3 text-right tabular-nums font-mono font-semibold text-primary">$3,616.00</td>
+<td class="px-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded text-[11px] font-mono bg-surface-container-lowest border border-outline-variant text-on-surface">
+                    1205 - Auction Acquisition Costs
+                  </span>
+</td>
+<td class="px-3 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-label-sm font-semibold bg-surface-container-high border border-outline-variant text-on-surface-variant">
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+                    99% Match
+                  </span>
+</td>
+<td class="px-3 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-xs font-semibold hover:bg-primary-fixed transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">bolt</span> Sync QBO
+                    </button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-sm">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 2 -->
+<tr class="h-11 bg-surface-container hover:bg-surface-container-high transition-colors group">
+<td class="px-3 text-center">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant text-primary focus:ring-0" type="checkbox"/>
+</td>
+<td class="px-3 text-on-surface-variant font-mono text-xs whitespace-nowrap">Jun 18, 2025</td>
+<td class="px-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container-low border border-outline-variant text-tertiary font-medium">
+                    Royal Motors (Etobicoke)
+                  </span>
+</td>
+<td class="px-3 font-medium text-on-surface whitespace-nowrap">Carquest Auto Parts</td>
+<td class="px-3 whitespace-nowrap font-mono text-xs text-tertiary">
+<div class="flex items-center gap-1.5">
+<span>1FTFW1ED4NFB31920</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface transition-opacity" title="Copy VIN">
+<span class="material-symbols-outlined text-xs">content_copy</span>
+</button>
+</div>
+</td>
+<td class="px-3 text-right tabular-nums font-mono">$1,480.00</td>
+<td class="px-3 text-right tabular-nums font-mono text-on-surface-variant">$192.40</td>
+<td class="px-3 text-right tabular-nums font-mono font-semibold text-primary">$1,672.40</td>
+<td class="px-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded text-[11px] font-mono bg-surface-container-lowest border border-outline-variant text-on-surface">
+                    1201 - Inventory WIP (Reconditioning)
+                  </span>
+</td>
+<td class="px-3 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-label-sm font-semibold bg-surface-container-high border border-outline-variant text-on-surface-variant">
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+                    98% Match
+                  </span>
+</td>
+<td class="px-3 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-xs font-semibold hover:bg-primary-fixed transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">bolt</span> Sync QBO
+                    </button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-sm">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 3 -->
+<tr class="h-11 bg-surface-container-low hover:bg-surface-container-high transition-colors group">
+<td class="px-3 text-center">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant text-primary focus:ring-0" type="checkbox"/>
+</td>
+<td class="px-3 text-on-surface-variant font-mono text-xs whitespace-nowrap">Jun 17, 2025</td>
+<td class="px-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container border border-outline-variant text-secondary font-medium">
+                    TQM Scarborough
+                  </span>
+</td>
+<td class="px-3 font-medium text-on-surface whitespace-nowrap">Sherwin-Williams Automotive</td>
+<td class="px-3 whitespace-nowrap font-mono text-xs text-tertiary">
+<div class="flex items-center gap-1.5">
+<span>WAUZZZF27NA019482</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface transition-opacity" title="Copy VIN">
+<span class="material-symbols-outlined text-xs">content_copy</span>
+</button>
+</div>
+</td>
+<td class="px-3 text-right tabular-nums font-mono">$890.00</td>
+<td class="px-3 text-right tabular-nums font-mono text-on-surface-variant">$115.70</td>
+<td class="px-3 text-right tabular-nums font-mono font-semibold text-primary">$1,005.70</td>
+<td class="px-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded text-[11px] font-mono bg-surface-container-lowest border border-outline-variant text-on-surface">
+                    5010 - Vehicle Prep &amp; Detailing
+                  </span>
+</td>
+<td class="px-3 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-label-sm font-semibold bg-surface-container-high border border-outline-variant text-on-surface-variant">
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+                    96% Match
+                  </span>
+</td>
+<td class="px-3 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-xs font-semibold hover:bg-primary-fixed transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">bolt</span> Sync QBO
+                    </button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-sm">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 4 -->
+<tr class="h-11 bg-surface-container hover:bg-surface-container-high transition-colors group">
+<td class="px-3 text-center">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant text-primary focus:ring-0" type="checkbox"/>
+</td>
+<td class="px-3 text-on-surface-variant font-mono text-xs whitespace-nowrap">Jun 17, 2025</td>
+<td class="px-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container-low border border-outline-variant text-on-surface font-medium">
+                    Great Motor Auto
+                  </span>
+</td>
+<td class="px-3 font-medium text-on-surface whitespace-nowrap">NAPA Auto Parts Concord</td>
+<td class="px-3 whitespace-nowrap font-mono text-xs text-tertiary">
+<div class="flex items-center gap-1.5">
+<span>3FA6P0HD4LR109481</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface transition-opacity" title="Copy VIN">
+<span class="material-symbols-outlined text-xs">content_copy</span>
+</button>
+</div>
+</td>
+<td class="px-3 text-right tabular-nums font-mono">$2,410.00</td>
+<td class="px-3 text-right tabular-nums font-mono text-on-surface-variant">$313.30</td>
+<td class="px-3 text-right tabular-nums font-mono font-semibold text-primary">$2,723.30</td>
+<td class="px-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded text-[11px] font-mono bg-surface-container-lowest border border-outline-variant text-on-surface">
+                    1201 - Inventory WIP (Reconditioning)
+                  </span>
+</td>
+<td class="px-3 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-label-sm font-semibold bg-surface-container-high border border-outline-variant text-on-surface-variant">
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+                    99% Match
+                  </span>
+</td>
+<td class="px-3 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-xs font-semibold hover:bg-primary-fixed transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">bolt</span> Sync QBO
+                    </button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-sm">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 5 -->
+<tr class="h-11 bg-surface-container-low hover:bg-surface-container-high transition-colors group">
+<td class="px-3 text-center">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant text-primary focus:ring-0" type="checkbox"/>
+</td>
+<td class="px-3 text-on-surface-variant font-mono text-xs whitespace-nowrap">Jun 16, 2025</td>
+<td class="px-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container border border-outline-variant text-primary font-medium">
+                    Payless Motors
+                  </span>
+</td>
+<td class="px-3 font-medium text-on-surface whitespace-nowrap">Midway Towing &amp; Recovery</td>
+<td class="px-3 whitespace-nowrap font-mono text-xs text-tertiary">
+<div class="flex items-center gap-1.5">
+<span>5J6RW1H89LA034182</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface transition-opacity" title="Copy VIN">
+<span class="material-symbols-outlined text-xs">content_copy</span>
+</button>
+</div>
+</td>
+<td class="px-3 text-right tabular-nums font-mono">$450.00</td>
+<td class="px-3 text-right tabular-nums font-mono text-on-surface-variant">$58.50</td>
+<td class="px-3 text-right tabular-nums font-mono font-semibold text-primary">$508.50</td>
+<td class="px-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded text-[11px] font-mono bg-surface-container-lowest border border-outline-variant text-on-surface">
+                    1205 - Auction Acquisition Costs
+                  </span>
+</td>
+<td class="px-3 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-label-sm font-semibold bg-surface-container-high border border-outline-variant text-on-surface-variant">
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+                    97% Match
+                  </span>
+</td>
+<td class="px-3 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-xs font-semibold hover:bg-primary-fixed transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">bolt</span> Sync QBO
+                    </button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-sm">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 6 -->
+<tr class="h-11 bg-surface-container hover:bg-surface-container-high transition-colors group">
+<td class="px-3 text-center">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant text-primary focus:ring-0" type="checkbox"/>
+</td>
+<td class="px-3 text-on-surface-variant font-mono text-xs whitespace-nowrap">Jun 16, 2025</td>
+<td class="px-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container-low border border-outline-variant text-tertiary font-medium">
+                    Royal Motors (Etobicoke)
+                  </span>
+</td>
+<td class="px-3 font-medium text-on-surface whitespace-nowrap">Discount Windshield Repair GTA</td>
+<td class="px-3 whitespace-nowrap font-mono text-xs text-tertiary">
+<div class="flex items-center gap-1.5">
+<span>1G6KD57Y78U198421</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface transition-opacity" title="Copy VIN">
+<span class="material-symbols-outlined text-xs">content_copy</span>
+</button>
+</div>
+</td>
+<td class="px-3 text-right tabular-nums font-mono">$620.00</td>
+<td class="px-3 text-right tabular-nums font-mono text-on-surface-variant">$80.60</td>
+<td class="px-3 text-right tabular-nums font-mono font-semibold text-primary">$700.60</td>
+<td class="px-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded text-[11px] font-mono bg-surface-container-lowest border border-outline-variant text-on-surface">
+                    1201 - Inventory WIP (Reconditioning)
+                  </span>
+</td>
+<td class="px-3 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-label-sm font-semibold bg-surface-container-high border border-outline-variant text-on-surface-variant">
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+                    99% Match
+                  </span>
+</td>
+<td class="px-3 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-xs font-semibold hover:bg-primary-fixed transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">bolt</span> Sync QBO
+                    </button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-sm">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer Pagination / Summary Strip -->
+<div class="p-3 bg-surface-container-lowest border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between text-body-sm font-body-sm text-on-surface-variant gap-2">
+<div class="flex items-center gap-2">
+<span>Showing <span class="text-on-surface font-semibold">6</span> of <span class="text-on-surface font-semibold">14</span> pending AI entries</span>
+<span class="text-outline">|</span>
+<span>Batch Total: <strong class="text-primary font-mono tabular-nums">CAD $10,226.50</strong> (incl. $1,176.50 HST)</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2 py-1 rounded border border-outline-variant bg-surface-container-low text-outline cursor-not-allowed">Previous</button>
+<button class="px-2 py-1 rounded border border-outline-variant bg-surface-container-high text-primary font-medium">1</button>
+<button class="px-2 py-1 rounded border border-outline-variant bg-surface-container-low hover:bg-surface-container text-on-surface">2</button>
+<button class="px-2 py-1 rounded border border-outline-variant bg-surface-container-low hover:bg-surface-container text-on-surface">3</button>
+<button class="px-2 py-1 rounded border border-outline-variant bg-surface-container-low hover:bg-surface-container text-on-surface">Next</button>
+</div>
+</div>
+</section>
+<!-- ==================== QUICKBOOKS SYNC FOOTER / STATUS DRAWER ==================== -->
+<footer class="rounded border border-outline-variant bg-surface-container-low p-4 space-y-3">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="flex items-center gap-2.5">
+<span class="w-3 h-3 rounded-full bg-primary animate-pulse"></span>
+<span class="text-headline-sm font-headline-sm font-semibold text-on-surface">
+              QuickBooks Online Accountant Live Sync Strip
+            </span>
+<span class="text-[11px] text-on-surface-variant font-mono">(Multi-Company OAuth2 Active)</span>
+</div>
+<a class="flex items-center gap-1.5 text-label-md font-label-md text-tertiary hover:underline self-start md:self-auto" href="https://quickbooks.intuit.com" target="_blank">
+<span>Open in QuickBooks Online Accountant</span>
+<span class="material-symbols-outlined text-sm">open_in_new</span>
+</a>
+</div>
+<!-- Synced Totals Today Across 4 Entities -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+<div class="p-2.5 rounded bg-surface border border-outline-variant flex items-center justify-between">
+<div>
+<div class="text-[10px] uppercase font-label-sm text-outline">Payless Motors (#001)</div>
+<div class="text-label-md font-label-md font-semibold text-on-surface font-mono tabular-nums mt-0.5">$42,100.00 CAD</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary" title="Synced 14 mins ago"></span>
+</div>
+<div class="p-2.5 rounded bg-surface border border-outline-variant flex items-center justify-between">
+<div>
+<div class="text-[10px] uppercase font-label-sm text-outline">Royal Motors (Etobicoke)</div>
+<div class="text-label-md font-label-md font-semibold text-on-surface font-mono tabular-nums mt-0.5">$28,950.00 CAD</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary" title="Synced 8 mins ago"></span>
+</div>
+<div class="p-2.5 rounded bg-surface border border-outline-variant flex items-center justify-between">
+<div>
+<div class="text-[10px] uppercase font-label-sm text-outline">Toronto Quality Motors</div>
+<div class="text-label-md font-label-md font-semibold text-on-surface font-mono tabular-nums mt-0.5">$19,400.00 CAD</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary" title="Synced 22 mins ago"></span>
+</div>
+<div class="p-2.5 rounded bg-surface border border-outline-variant flex items-center justify-between">
+<div>
+<div class="text-[10px] uppercase font-label-sm text-outline">Great Motor Auto</div>
+<div class="text-label-md font-label-md font-semibold text-on-surface font-mono tabular-nums mt-0.5">$14,200.00 CAD</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary" title="Synced 4 mins ago"></span>
+</div>
+</div>
+</footer>
+</main>
+</div>
+<!-- Interactive Scripts for UI Dropdown and Micro-actions -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const dropdownBtn = document.getElementById('entityDropdownBtn');
+      const dropdownMenu = document.getElementById('entityDropdown');
+
+      if (dropdownBtn && dropdownMenu) {
+        // Toggle dropdown visibility
+        dropdownBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdownMenu.classList.toggle('hidden');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!dropdownMenu.contains(e.target) && !dropdownBtn.contains(e.target)) {
+            dropdownMenu.classList.add('hidden');
+          }
+        });
+
+        // Handle entity selection from dropdown
+        const entityButtons = dropdownMenu.querySelectorAll('button');
+        entityButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            // Find the main text span (avoiding the #001 label)
+            const textSpan = btn.querySelector('span:not(.text-xs)');
+            if (textSpan) {
+              const btnSpan = dropdownBtn.querySelector('.font-medium.text-primary');
+              if (btnSpan) btnSpan.textContent = textSpan.textContent.trim();
+            }
+            dropdownMenu.classList.add('hidden');
+          });
+        });
+      }
+
+      // Handle table filtering by Entity
+      const entityFilterSelect = document.getElementById('entityFilterSelect');
+      if (entityFilterSelect) {
+        entityFilterSelect.addEventListener('change', (e) => {
+          const selectedVal = e.target.value;
+          const filterText = selectedVal === 'All' ? '' : selectedVal.split(' ')[0]; // E.g. 'Payless', 'Royal', 'Toronto', 'Great'
+          
+          const rows = document.querySelectorAll('tbody tr');
+          rows.forEach(row => {
+            const entityCell = row.querySelector('td:nth-child(3)');
+            if (entityCell) {
+              const entityText = entityCell.textContent.trim();
+              if (filterText === '' || entityText.includes(filterText)) {
+                row.style.display = '';
+              } else {
+                row.style.display = 'none';
+              }
+            }
+          });
+        });
+      }
+
+      // Wire up the Sync QBO buttons
+      const allButtons = document.querySelectorAll('button');
+      const syncButtons = Array.from(allButtons).filter(btn => btn.textContent.includes('Sync QBO'));
+
+      syncButtons.forEach(button => {
+        button.addEventListener('click', async (e) => {
+          // Determine the currently selected company from the dropdown
+          const currentCompany = dropdownBtn ? dropdownBtn.querySelector('.font-medium.text-primary').textContent.trim() : 'Payless Motors';
+          
+          let companyKey = 'PAYLESS_MOTORS';
+          if (currentCompany.includes('Royal')) companyKey = 'ROYAL_MOTORS';
+          else if (currentCompany.includes('Toronto') || currentCompany.includes('TQM')) companyKey = 'TQM';
+          else if (currentCompany.includes('Great')) companyKey = 'GREAT_MOTOR_AUTO';
+
+          // Extract basic receipt details from the table row
+          const row = button.closest('tr');
+          let vendorName = 'Unknown Vendor';
+          let subtotal = 0, hst = 0, total = 0;
+          
+          if (row) {
+            vendorName = row.querySelector('td:nth-child(3)')?.textContent.trim() || vendorName;
+            subtotal = parseFloat(row.querySelector('td:nth-child(5)')?.textContent.replace(/[^0-9.-]+/g, '')) || 0;
+            hst = parseFloat(row.querySelector('td:nth-child(6)')?.textContent.replace(/[^0-9.-]+/g, '')) || 0;
+            total = parseFloat(row.querySelector('td:nth-child(7)')?.textContent.replace(/[^0-9.-]+/g, '')) || 0;
+          }
+
+          const journalPayload = {
+            Line: [
+              {
+                DetailType: "JournalEntryLineDetail",
+                Amount: subtotal,
+                JournalEntryLineDetail: { PostingType: "Debit", AccountRef: { value: "1201", name: "Inventory WIP" } }
+              },
+              {
+                DetailType: "JournalEntryLineDetail",
+                Amount: hst,
+                JournalEntryLineDetail: { PostingType: "Debit", AccountRef: { value: "2400", name: "HST Payable 13%" } }
+              },
+              {
+                DetailType: "JournalEntryLineDetail",
+                Amount: total,
+                JournalEntryLineDetail: { PostingType: "Credit", AccountRef: { value: "2000", name: "Accounts Payable" } }
+              }
+            ],
+            PrivateNote: `Vendor: ${vendorName}`
+          };
+
+          // Update UI to Syncing
+          const originalHTML = button.innerHTML;
+          button.innerHTML = '<span class="material-symbols-outlined text-xs animate-spin">autorenew</span> Syncing...';
+          button.disabled = true;
+
+          try {
+            const response = await fetch('/api/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ companyKey, journalPayload })
+            });
+
+            if (response.ok) {
+              // Update UI to Synced
+              button.innerHTML = '<span class="material-symbols-outlined text-xs">check</span> Synced ✓';
+              button.classList.remove('bg-primary', 'hover:bg-primary-fixed', 'text-on-primary');
+              button.classList.add('bg-surface-container-high', 'text-primary', 'border', 'border-primary/20');
+            } else {
+              button.innerHTML = originalHTML;
+              button.disabled = false;
+              alert('Sync failed!');
+            }
+          } catch (error) {
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+            console.error('Error syncing:', error);
+            alert('Error syncing. Ensure server is running.');
+          }
+        });
+      });
+
+      // ==================== FILE UPLOAD LOGIC ====================
+      const dropzone = document.getElementById('receiptDropzone');
+      const fileInput = document.getElementById('receiptFileInput');
+      const dropzoneContent = document.getElementById('dropzoneContent');
+      const uploadProgress = document.getElementById('uploadProgress');
+
+      dropzone.addEventListener('click', () => fileInput.click());
+      
+      dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('border-primary', 'bg-surface-container');
+      });
+
+      dropzone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('border-primary', 'bg-surface-container');
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('border-primary', 'bg-surface-container');
+        if (e.dataTransfer.files.length) {
+          handleFileUpload(e.dataTransfer.files[0]);
+        }
+      });
+
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+          handleFileUpload(fileInput.files[0]);
+        }
+      });
+
+      function handleFileUpload(file) {
+        dropzoneContent.classList.add('hidden');
+        uploadProgress.classList.remove('hidden');
+        uploadProgress.classList.add('flex');
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const base64Data = e.target.result.split(',')[1];
+          const entityId = document.getElementById('entityFilterSelect').value === 'All' ? 'PAYLESS_MOTORS' : document.getElementById('entityFilterSelect').value;
+          
+          try {
+            const response = await fetch('/api/extract', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ imageData: base64Data, entityId })
+            });
+
+            if (response.ok) {
+              alert('Extraction successful! Refreshing page...');
+              window.location.reload();
+            } else {
+              alert('Extraction failed!');
+              resetDropzone();
+            }
+          } catch (error) {
+            console.error('Error uploading:', error);
+            alert('Error during extraction.');
+            resetDropzone();
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function resetDropzone() {
+        uploadProgress.classList.add('hidden');
+        uploadProgress.classList.remove('flex');
+        dropzoneContent.classList.remove('hidden');
+        fileInput.value = '';
+      }
+    });
+  </script>
+</body></html>

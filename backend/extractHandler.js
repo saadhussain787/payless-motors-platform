@@ -39,7 +39,7 @@ exports.handler = async (event) => {
     }
 
     // Invoke the parser
-    const result = parseReceipt(imageData);
+    const result = await parseReceipt(imageData);
     
     // Create the DB record
     const entryId = uuidv4();

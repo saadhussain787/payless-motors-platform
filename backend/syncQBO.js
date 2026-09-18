@@ -12,9 +12,9 @@ const { getQboConfig } = require('./qboAuth');
  * @param {string} companyKey - The entity key (e.g., 'PAYLESS_MOTORS')
  * @param {object} journalPayload - The structured QBO JournalEntry payload
  */
-function syncJournalEntry(companyKey, journalPayload) {
+async function syncJournalEntry(companyKey, journalPayload) {
   try {
-    const config = getQboConfig(companyKey);
+    const config = await getQboConfig(companyKey);
     const realmId = config.tokens.realmId || '{REALM_ID_MISSING}';
     const accessToken = config.tokens.accessToken || '{ACCESS_TOKEN_MISSING}';
     

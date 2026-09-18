@@ -2,30 +2,24 @@
  * qboAuth.js
  * 
  * Manages multi-company OAuth token structures for QuickBooks Online (QBO).
- * Entities:
- * - Payless Motors
- * - Royal Motors
- * - TQM
- * - Great Motor Auto
+ * Tokens and credentials are managed via environment variables and DynamoDB.
  */
 
-// Define the supported entities and map them to their QBO configurations
-// Tokens and credentials are managed via environment variables
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+
+const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'ca-central-1' });
+const docClient = DynamoDBDocumentClient.from(client);
+
+const TOKEN_TABLE = process.env.TOKEN_TABLE_NAME || 'PaylessQBOTokens';
+
 const qboEntities = {
   PAYLESS_MOTORS: {
     name: 'Payless Motors',
     clientId: process.env.PAYLESS_QBO_CLIENT_ID,
     clientSecret: process.env.PAYLESS_QBO_CLIENT_SECRET,
     redirectUri: process.env.PAYLESS_QBO_REDIRECT_URI,
-    environment: process.env.QBO_ENVIRONMENT || 'sandbox', // 'sandbox' or 'production'
-    // Placeholder for token storage. In a real application, 
-    // these should be stored securely in a database or key vault.
-    tokens: {
-      realmId: process.env.PAYLESS_QBO_REALM_ID,
-      accessToken: process.env.PAYLESS_QBO_ACCESS_TOKEN,
-      refreshToken: process.env.PAYLESS_QBO_REFRESH_TOKEN,
-      tokenExpiresAt: process.env.PAYLESS_QBO_TOKEN_EXPIRES_AT, // timestamp
-    }
+    environment: process.env.QBO_ENVIRONMENT || 'sandbox',
   },
   ROYAL_MOTORS: {
     name: 'Royal Motors',
@@ -33,12 +27,6 @@ const qboEntities = {
     clientSecret: process.env.ROYAL_QBO_CLIENT_SECRET,
     redirectUri: process.env.ROYAL_QBO_REDIRECT_URI,
     environment: process.env.QBO_ENVIRONMENT || 'sandbox',
-    tokens: {
-      realmId: process.env.ROYAL_QBO_REALM_ID,
-      accessToken: process.env.ROYAL_QBO_ACCESS_TOKEN,
-      refreshToken: process.env.ROYAL_QBO_REFRESH_TOKEN,
-      tokenExpiresAt: process.env.ROYAL_QBO_TOKEN_EXPIRES_AT,
-    }
   },
   TQM: {
     name: 'TQM',
@@ -46,12 +34,6 @@ const qboEntities = {
     clientSecret: process.env.TQM_QBO_CLIENT_SECRET,
     redirectUri: process.env.TQM_QBO_REDIRECT_URI,
     environment: process.env.QBO_ENVIRONMENT || 'sandbox',
-    tokens: {
-      realmId: process.env.TQM_QBO_REALM_ID,
-      accessToken: process.env.TQM_QBO_ACCESS_TOKEN,
-      refreshToken: process.env.TQM_QBO_REFRESH_TOKEN,
-      tokenExpiresAt: process.env.TQM_QBO_TOKEN_EXPIRES_AT,
-    }
   },
   GREAT_MOTOR_AUTO: {
     name: 'Great Motor Auto',
@@ -59,47 +41,74 @@ const qboEntities = {
     clientSecret: process.env.GMA_QBO_CLIENT_SECRET,
     redirectUri: process.env.GMA_QBO_REDIRECT_URI,
     environment: process.env.QBO_ENVIRONMENT || 'sandbox',
-    tokens: {
-      realmId: process.env.GMA_QBO_REALM_ID,
-      accessToken: process.env.GMA_QBO_ACCESS_TOKEN,
-      refreshToken: process.env.GMA_QBO_REFRESH_TOKEN,
-      tokenExpiresAt: process.env.GMA_QBO_TOKEN_EXPIRES_AT,
-    }
   }
 };
 
 /**
- * Retrieves the OAuth configuration and current tokens for a specific entity.
+ * Retrieves the OAuth configuration and current tokens for a specific entity from DynamoDB.
  * @param {string} entityKey - The key of the entity (e.g., 'PAYLESS_MOTORS')
- * @returns {object} The QBO configuration object for the entity
+ * @returns {Promise<object>} The QBO configuration object including tokens
  */
-function getQboConfig(entityKey) {
+async function getQboConfig(entityKey) {
   const config = qboEntities[entityKey];
   if (!config) {
     throw new Error(`Invalid QBO entity requested: ${entityKey}`);
   }
-  return config;
+
+  try {
+    const command = new GetCommand({
+      TableName: TOKEN_TABLE,
+      Key: { entityId: entityKey }
+    });
+    
+    const response = await docClient.send(command);
+    const tokens = response.Item ? response.Item : {};
+
+    // Fallback to env vars if not in DB
+    const prefix = entityKey.split('_')[0];
+    return {
+      ...config,
+      tokens: {
+        realmId: tokens.realmId || process.env[`${prefix}_QBO_REALM_ID`],
+        accessToken: tokens.accessToken || process.env[`${prefix}_QBO_ACCESS_TOKEN`],
+        refreshToken: tokens.refreshToken || process.env[`${prefix}_QBO_REFRESH_TOKEN`],
+        tokenExpiresAt: tokens.tokenExpiresAt || process.env[`${prefix}_QBO_TOKEN_EXPIRES_AT`]
+      }
+    };
+  } catch (err) {
+    console.error(`[QBO Auth] Error fetching tokens for ${entityKey}:`, err);
+    throw new Error('Failed to retrieve QBO tokens from database.');
+  }
 }
 
 /**
- * Updates the OAuth tokens for a specific entity in memory.
- * Note: You MUST also persist these to your database or secure storage.
+ * Updates the OAuth tokens for a specific entity in DynamoDB.
  * 
  * @param {string} entityKey - The key of the entity (e.g., 'PAYLESS_MOTORS')
  * @param {object} newTokens - Object containing new token values
  */
-function updateTokens(entityKey, newTokens) {
+async function updateTokens(entityKey, newTokens) {
   const config = qboEntities[entityKey];
   if (!config) {
     throw new Error(`Invalid QBO entity requested: ${entityKey}`);
   }
   
-  if (newTokens.realmId) config.tokens.realmId = newTokens.realmId;
-  if (newTokens.accessToken) config.tokens.accessToken = newTokens.accessToken;
-  if (newTokens.refreshToken) config.tokens.refreshToken = newTokens.refreshToken;
-  if (newTokens.tokenExpiresAt) config.tokens.tokenExpiresAt = newTokens.tokenExpiresAt;
-  
-  console.log(`[QBO Auth] Updated tokens in memory for ${config.name}. Remember to persist to DB!`);
+  try {
+    const command = new PutCommand({
+      TableName: TOKEN_TABLE,
+      Item: {
+        entityId: entityKey,
+        ...newTokens,
+        updatedAt: new Date().toISOString()
+      }
+    });
+
+    await docClient.send(command);
+    console.log(`[QBO Auth] Successfully updated tokens in DynamoDB for ${config.name}.`);
+  } catch (err) {
+    console.error(`[QBO Auth] Error saving tokens for ${entityKey}:`, err);
+    throw new Error('Failed to save QBO tokens to database.');
+  }
 }
 
 module.exports = {

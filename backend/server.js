@@ -10,7 +10,15 @@ const PORT = 3000;
 const parseJsonBody = (req) => {
   return new Promise((resolve, reject) => {
     let body = '';
+    let bytesReceived = 0;
+    const MAX_PAYLOAD_SIZE = 5 * 1024 * 1024; // 5MB limit
+
     req.on('data', chunk => {
+      bytesReceived += chunk.length;
+      if (bytesReceived > MAX_PAYLOAD_SIZE) {
+        req.destroy();
+        return reject(new Error('Payload Too Large: Exceeds 5MB limit'));
+      }
       body += chunk.toString();
     });
     req.on('end', () => {
@@ -57,7 +65,7 @@ const server = http.createServer(async (req, res) => {
       const body = await parseJsonBody(req);
       const { imageData } = body;
       
-      const result = parseReceipt(imageData || 'Placeholder data');
+      const result = await parseReceipt(imageData || 'Placeholder data');
       
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(result));
@@ -81,7 +89,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       // Execute the mock sync function (logs to the console)
-      syncJournalEntry(companyKey, journalPayload);
+      await syncJournalEntry(companyKey, journalPayload);
       
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, message: `Sync initiated for ${companyKey}` }));

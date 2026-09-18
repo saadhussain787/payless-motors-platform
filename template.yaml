@@ -7,7 +7,7 @@ Globals:
     Cors:
       AllowMethods: "'OPTIONS,POST'"
       AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-      AllowOrigin: "'*'"
+      AllowOrigin: "'https://portal.paylessmotors.com'"
 
 Resources:
   PaylessJournalEntriesTable:
@@ -43,6 +43,18 @@ Resources:
           Projection:
             ProjectionType: ALL
 
+  PaylessQBOTokensTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PaylessQBOTokens
+      AttributeDefinitions:
+        - AttributeName: entityId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: entityId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
   PaylessReceiptUploadsBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -57,7 +69,7 @@ Resources:
               - POST
               - HEAD
             AllowedOrigins:
-              - '*'
+              - 'https://portal.paylessmotors.com'
 
   ExtractReceiptFunction:
     Type: AWS::Serverless::Function
@@ -65,11 +77,21 @@ Resources:
       CodeUri: backend/
       Handler: extractHandler.handler
       Runtime: nodejs20.x
+      Environment:
+        Variables:
+          RECEIPT_TABLE_NAME: !Ref PaylessJournalEntriesTable
+          TOKEN_TABLE_NAME: !Ref PaylessQBOTokensTable
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PaylessJournalEntriesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaylessQBOTokensTable
         - S3ReadPolicy:
             BucketName: !Sub "payless-receipt-uploads-${AWS::AccountId}-${AWS::Region}"
+        - Statement:
+            - Effect: Allow
+              Action: 'bedrock:InvokeModel'
+              Resource: '*'
       Events:
         ExtractApi:
           Type: Api
@@ -88,12 +110,99 @@ Resources:
       CodeUri: backend/
       Handler: syncHandler.handler
       Runtime: nodejs20.x
+      Environment:
+        Variables:
+          RECEIPT_TABLE_NAME: !Ref PaylessJournalEntriesTable
+          TOKEN_TABLE_NAME: !Ref PaylessQBOTokensTable
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PaylessJournalEntriesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaylessQBOTokensTable
       Events:
         SyncApi:
           Type: Api
           Properties:
             Path: /sync
             Method: post
+
+  LedgerHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: ledgerHandler.handler
+      Runtime: nodejs20.x
+      Environment:
+        Variables:
+          RECEIPT_TABLE_NAME: !Ref PaylessJournalEntriesTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PaylessJournalEntriesTable
+      Events:
+        LedgerApi:
+          Type: Api
+          Properties:
+            Path: /ledger
+            Method: any
+
+  # Cognito User Pool & Authentication
+  PaylessUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: payless-motors-users
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+
+  PaylessUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: payless-portal-web
+      UserPoolId: !Ref PaylessUserPool
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+      GenerateSecret: false
+
+  OwnerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Owner
+      UserPoolId: !Ref PaylessUserPool
+      Description: "Owner with full dashboard access"
+
+  ControllerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Controller
+      UserPoolId: !Ref PaylessUserPool
+      Description: "Controller with sync & approval access"
+
+  TechnicianGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Technician
+      UserPoolId: !Ref PaylessUserPool
+      Description: "Shop technician with mobile upload access only"
+
+Outputs:
+  UserPoolId:
+    Description: "ID of the created Cognito User Pool"
+    Value: !Ref PaylessUserPool
+  UserPoolClientId:
+    Description: "ID of the created Cognito User Pool Client"
+    Value: !Ref PaylessUserPoolClient
+  ApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"

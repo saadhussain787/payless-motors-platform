@@ -39,7 +39,22 @@ You must respond with EXACTLY this JSON structure. Do not include any conversati
 
 {
   "qboJournalPayload": {
-    // Insert the perfectly balanced QuickBooks Online Journal Entry Array here based on Directive 1.
+    "Line": [
+      {
+        "Id": "0",
+        "Description": "Description of the line item",
+        "Amount": 0.00,
+        "DetailType": "JournalEntryLineDetail",
+        "JournalEntryLineDetail": {
+          "PostingType": "Debit", // or "Credit"
+          "AccountRef": {
+            "value": "1201", // The account number from Directive 1
+            "name": "Account Name"
+          }
+        }
+      }
+      // Add all necessary lines to balance Debits and Credits
+    ]
   },
   "extractedData": {
     "vendor": "Name of Vendor",
@@ -59,25 +74,39 @@ You must respond with EXACTLY this JSON structure. Do not include any conversati
 If the user types the exact phrase "FRIDAY REPORT", ignore the above directives. Instead, generate a highly professional, 3-sentence weekly summary email that the user can send to the boss. It should summarize the week's work, highlight that the bank feeds are being reconciled, and give the impression that the user has been working hard all week on the books.
   `.trim();
 
-  // Construct the payload for Anthropic Claude Messages API
+  let mediaBlock;
+  if (imageData.startsWith("JVBERi0")) {
+    mediaBlock = {
+      document: {
+        name: "receipt",
+        format: "pdf",
+        source: { bytes: imageData }
+      }
+    };
+  } else {
+    let imageFormat = "jpeg";
+    if (imageData.startsWith("iVBORw")) imageFormat = "png";
+    else if (imageData.startsWith("R0lGODlh")) imageFormat = "gif";
+    else if (imageData.startsWith("UklGR")) imageFormat = "webp";
+    
+    mediaBlock = {
+      image: {
+        format: imageFormat,
+        source: { bytes: imageData }
+      }
+    };
+  }
+
+  // Construct the payload for Amazon Nova Converse API schema
   const payload = {
-    anthropic_version: "bedrock-2023-05-31",
-    max_tokens: 1500,
-    system: systemPrompt,
+    system: [{ text: systemPrompt }],
+    inferenceConfig: { maxTokens: 1500 },
     messages: [
       {
         role: "user",
         content: [
+          mediaBlock,
           {
-            type: "image",
-            source: {
-              type: "base64",
-              media_type: "image/jpeg", // Claude supports jpeg, png, webp, gif
-              data: imageData
-            }
-          },
-          {
-            type: "text",
             text: "Extract the data from this receipt and generate the JSON payload."
           }
         ]
@@ -87,8 +116,8 @@ If the user types the exact phrase "FRIDAY REPORT", ignore the above directives.
 
   try {
     const command = new InvokeModelCommand({
-      // We recommend Claude 3.5 Sonnet for high accuracy OCR + logic
-      modelId: "anthropic.claude-3-sonnet-20240229-v1:0", 
+      // Using Nova 2 Lite cross-region inference as requested
+      modelId: "us.amazon.nova-2-lite-v1:0", 
       contentType: "application/json",
       accept: "application/json",
       body: JSON.stringify(payload)
@@ -99,7 +128,7 @@ If the user types the exact phrase "FRIDAY REPORT", ignore the above directives.
     // Decode the response
     const rawResponseBody = new TextDecoder().decode(response.body);
     const responseBody = JSON.parse(rawResponseBody);
-    let aiText = responseBody.content[0].text;
+    let aiText = responseBody.output.message.content[0].text;
 
     // Safety: Strip markdown JSON blocks if the model ignored the "no markdown" instruction
     aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();

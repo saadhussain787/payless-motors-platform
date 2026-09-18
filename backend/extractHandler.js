@@ -1,9 +1,12 @@
-const AWS = require('aws-sdk');
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { parseReceipt } = require('./extractReceipt');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 
-const docClient = new AWS.DynamoDB.DocumentClient();
-const s3 = new AWS.S3();
+const dbClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'ca-central-1' });
+const docClient = DynamoDBDocumentClient.from(dbClient);
+const s3Client = new S3Client({ region: process.env.AWS_REGION || 'ca-central-1' });
 const TABLE_NAME = 'PaylessJournalEntries';
 
 exports.handler = async (event) => {
@@ -24,8 +27,14 @@ exports.handler = async (event) => {
       }
 
       // Download from S3
-      const s3Object = await s3.getObject({ Bucket: bucket, Key: key }).promise();
-      imageData = s3Object.Body.toString('base64');
+      const s3Object = await s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+      const streamToString = (stream) => new Promise((resolve, reject) => {
+        const chunks = [];
+        stream.on("data", (chunk) => chunks.push(chunk));
+        stream.on("error", reject);
+        stream.on("end", () => resolve(Buffer.concat(chunks).toString('base64')));
+      });
+      imageData = await streamToString(s3Object.Body);
     } 
     // Handle API Gateway POST
     else if (event.body) {
@@ -41,27 +50,35 @@ exports.handler = async (event) => {
     // Invoke the parser
     const result = await parseReceipt(imageData);
     
+    // Check if AI requested Ask Accountant
+    let initialStatus = 'PENDING';
+    const payloadStr = JSON.stringify(result.aiResponsePayload.qboJournalPayload);
+    if (payloadStr.includes('"value":"9999"') || payloadStr.includes('"value": "9999"')) {
+      initialStatus = 'NEEDS_REVIEW';
+    }
+
     // Create the DB record
-    const entryId = uuidv4();
+    const entryId = randomUUID();
     const Item = {
       entityId,
       entryId,
-      status: 'PENDING',
+      status: initialStatus,
       vin: result.aiResponsePayload.extractedData.vin || 'UNKNOWN',
-      vendorName: result.aiResponsePayload.extractedData.vendorName,
+      vendorName: result.aiResponsePayload.extractedData.vendor,
       date: result.aiResponsePayload.extractedData.date,
       subtotal: result.aiResponsePayload.extractedData.subtotal,
-      hstAmount: result.aiResponsePayload.extractedData.hstAmount,
+      hstAmount: result.aiResponsePayload.extractedData.hst,
       total: result.aiResponsePayload.extractedData.total,
       journalPayload: result.aiResponsePayload.qboJournalPayload,
+      smartAction: result.aiResponsePayload.smartAction,
       createdAt: new Date().toISOString()
     };
 
     // Save to DynamoDB
-    await docClient.put({
+    await docClient.send(new PutCommand({
       TableName: TABLE_NAME,
       Item
-    }).promise();
+    }));
 
     return {
       statusCode: 200,

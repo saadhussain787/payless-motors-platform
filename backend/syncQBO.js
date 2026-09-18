@@ -40,6 +40,7 @@ async function syncJournalEntry(companyKey, journalPayload) {
 
   } catch (error) {
     console.error(`Failed to sync journal entry for ${companyKey}:`, error.message);
+    throw error;
   }
 }
 

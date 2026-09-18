@@ -122,18 +122,41 @@ function updateProfileUI(token) {
       return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
     const payload = JSON.parse(jsonPayload);
-    const email = payload.email || '';
+    const email = (payload.email || payload['cognito:username'] || payload.username || '').toLowerCase();
     
     let name = email;
     let role = 'User';
-    if (email.startsWith('owner')) { name = 'Khaled Mousa'; role = 'Owner'; }
-    else if (email.startsWith('controller')) { name = 'Arfa'; role = 'Controller'; }
-    else if (email.startsWith('technician')) { name = 'Technician'; role = 'Technician'; }
+    let avatarUrl = "https://ui-avatars.com/api/?name=User&background=random";
+
+    if (email.includes('owner')) { 
+      name = 'Khaled Mousa'; 
+      role = 'Owner'; 
+      avatarUrl = "https://ui-avatars.com/api/?name=Khaled+Mousa&background=0D8ABC&color=fff";
+    }
+    else if (email.includes('controller')) { 
+      name = 'Arfa'; 
+      role = 'Controller'; 
+      avatarUrl = "https://ui-avatars.com/api/?name=Arfa&background=10B981&color=fff";
+    }
+    else if (email.includes('technician')) { 
+      name = 'Technician'; 
+      role = 'Technician'; 
+      avatarUrl = "https://ui-avatars.com/api/?name=Technician&background=FFB95F&color=fff";
+    }
     
     const nameEl = document.getElementById('profile-name');
     if (nameEl) nameEl.textContent = name;
+    
     const roleEl = document.getElementById('profile-role');
     if (roleEl) roleEl.textContent = role;
+
+    // Try to update profile image if it exists
+    const profileImg = document.querySelector('img[data-alt]');
+    if (profileImg) {
+      profileImg.src = avatarUrl;
+      profileImg.setAttribute('data-alt', `Profile picture of ${name}`);
+    }
+
   } catch(e) {
     console.error("Failed to parse token for profile UI", e);
   }

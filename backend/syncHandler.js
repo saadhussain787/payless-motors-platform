@@ -1,7 +1,9 @@
-const AWS = require('aws-sdk');
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { syncJournalEntry } = require('./syncQBO');
 
-const docClient = new AWS.DynamoDB.DocumentClient();
+const dbClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'ca-central-1' });
+const docClient = DynamoDBDocumentClient.from(dbClient);
 const TABLE_NAME = 'PaylessJournalEntries';
 
 exports.handler = async (event) => {
@@ -10,17 +12,17 @@ exports.handler = async (event) => {
     const { companyKey, journalPayload, entityId, entryId } = body;
 
     // Invoke sync functionality
-    syncJournalEntry(companyKey, journalPayload);
+    await syncJournalEntry(companyKey, journalPayload);
 
     // Update the DynamoDB record status to 'SYNCED' if we have the keys
     if (entityId && entryId) {
-      await docClient.update({
+      await docClient.send(new UpdateCommand({
         TableName: TABLE_NAME,
         Key: { entityId, entryId },
         UpdateExpression: 'set #s = :statusVal',
         ExpressionAttributeNames: { '#s': 'status' },
         ExpressionAttributeValues: { ':statusVal': 'SYNCED' }
-      }).promise();
+      }));
     }
 
     return {

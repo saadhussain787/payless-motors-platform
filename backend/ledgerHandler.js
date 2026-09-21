@@ -4,7 +4,7 @@
  */
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, ScanCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 
 const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'ca-central-1' });
 const docClient = DynamoDBDocumentClient.from(client);
@@ -16,17 +16,18 @@ exports.handler = async (event) => {
     const httpMethod = event.httpMethod || event.requestContext?.http?.method;
 
     if (httpMethod === 'GET') {
-      // For now, scan the table to get all PENDING entries.
-      // In production, we'd query by Global Secondary Index (StatusIndex)
-      const command = new ScanCommand({
+      // Query the table by Global Secondary Index (StatusIndex)
+      const command = new QueryCommand({
         TableName: TABLE_NAME,
-        FilterExpression: '#st = :status',
+        IndexName: 'StatusIndex',
+        KeyConditionExpression: '#st = :status',
         ExpressionAttributeNames: {
           '#st': 'status'
         },
         ExpressionAttributeValues: {
           ':status': 'PENDING'
-        }
+        },
+        Limit: 50
       });
 
       const response = await docClient.send(command);

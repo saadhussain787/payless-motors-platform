@@ -156,9 +156,12 @@
 <body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col font-body-md overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
 <!-- ==================== TOP NAVIGATION BAR ==================== -->
 <!-- Executing TopNavBar specification from JSON schema -->
-<header class="flex justify-between items-center w-full px-6 h-20 pt-4 pb-1 bg-surface fixed top-0 z-40 border-b border-outline-variant">
+<header class="flex justify-between items-center w-full px-4 sm:px-6 h-20 pt-4 pb-1 bg-surface fixed top-0 z-40 border-b border-outline-variant">
 <!-- Brand / Product Identity & Ontario Tax Jurisdiction -->
-<div class="flex items-center gap-5">
+<div class="flex items-center gap-2 sm:gap-5">
+<button id="mobile-menu-btn" class="xl:hidden p-1 sm:p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors mr-1">
+  <span class="material-symbols-outlined">menu</span>
+</button>
 <div class="flex items-center gap-3">
 <div class="w-8 h-8 rounded bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary font-headline-sm font-bold tracking-tight shadow-inner">
           P
@@ -260,9 +263,10 @@
 </header>
 <!-- ==================== MAIN WORKSPACE LAYOUT ==================== -->
 <div class="flex flex-1 pt-20">
-<!-- ==================== SIDEBAR RAIL ==================== -->
+<!-- ==================== SIDEBAR RAIL & MOBILE OVERLAY ==================== -->
+<div id="mobile-overlay" class="fixed inset-0 top-20 bg-black/50 z-20 hidden xl:hidden transition-opacity opacity-0"></div>
 <!-- Executing SideNavBar JSON specification -->
-<aside class="fixed left-0 top-20 bottom-0 w-60 z-30 flex flex-col justify-between p-4 bg-surface-container-lowest border-r border-outline-variant">
+<aside id="sidebar" class="fixed left-0 top-20 bottom-0 w-60 z-30 flex flex-col justify-between p-4 bg-surface-container-lowest border-r border-outline-variant transform -translate-x-full xl:translate-x-0 transition-transform duration-300 ease-in-out">
 <!-- Rail Upper Section -->
 <div class="flex flex-col gap-5 overflow-y-auto">
 
@@ -339,7 +343,7 @@
 </div>
 </aside>
 <!-- ==================== MAIN CONTENT CANVAS ==================== -->
-<main class="flex-1 ml-60 p-6 lg:p-8 space-y-6 max-w-[1720px]">
+<main class="flex-1 w-full xl:ml-60 p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1720px] overflow-hidden">
 <!-- Top Section Header with Title and Fast Action Export -->
 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 <div>
@@ -1216,6 +1220,25 @@
         fileInput.value = '';
       }
     });
+  </script>
+  <script>
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileOverlay = document.getElementById('mobile-overlay');
+    const sidebar = document.getElementById('sidebar');
+
+    function toggleMobileMenu() {
+      sidebar.classList.toggle('-translate-x-full');
+      if (sidebar.classList.contains('-translate-x-full')) {
+        mobileOverlay.classList.remove('opacity-100');
+        setTimeout(() => mobileOverlay.classList.add('hidden'), 300);
+      } else {
+        mobileOverlay.classList.remove('hidden');
+        setTimeout(() => mobileOverlay.classList.add('opacity-100'), 10);
+      }
+    }
+
+    mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+    mobileOverlay.addEventListener('click', toggleMobileMenu);
   </script>
 <script src="auth.js"></script>
 </body>
